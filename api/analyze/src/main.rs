@@ -29,31 +29,32 @@ const ALLOWED_ORIGIN: &str = "https://dawg.city";
   
 #[tokio::main] 
 async fn main() -> Result<(), Error> { 
-    run(analyze_handler).await 
+    run(handler).await 
 } 
   
-async fn analyze_handler(req: Request) -> Result<Response<Body>, Error> { 
+pub async fn handler(req: Request) -> Result<Response<Body>, Error> { 
     if req.method() == "OPTIONS" { return preflight_response(); } 
     if req.method() != "POST" { 
-        return json_error(StatusCode::METHOD_NOT_ALLOWED, "Only POST method allowed"); 
+        return error_response(StatusCode::METHOD_NOT_ALLOWED, "Only POST method allowed"); 
     } 
   
-    let body_bytes = match req.body() { 
-        Body::Text(s) => s.as_bytes().to_vec(), 
-        Body::Binary(b) => b.to_vec(), 
-        Body::Empty => return json_error(StatusCode::BAD_REQUEST, "Empty request body"), 
+    // Parse body 
+    let body_str = match req.body() { 
+        Body::Text(s) => s.clone(), 
+        Body::Binary(b) => String::from_utf8_lossy(b).into_owned(), 
+        Body::Empty => return error_response(StatusCode::BAD_REQUEST, "Empty request body"), 
     }; 
   
-    let req_json: RequestBody = match serde_json::from_slice(&body_bytes) { 
+    let req_json: RequestBody = match serde_json::from_str(&body_str) { 
         Ok(r) => r, 
-        Err(_) => return json_error( 
+        Err(_) => return error_response( 
             StatusCode::BAD_REQUEST, 
             "Invalid JSON. Expected: {\"url\": \"https://...\"}" 
         ), 
     }; 
   
     if !req_json.url.starts_with("http://") && !req_json.url.starts_with("https://") { 
-        return json_error(StatusCode::BAD_REQUEST, "URL must start with http:// or https://"); 
+        return error_response(StatusCode::BAD_REQUEST, "URL must start with http:// or https://"); 
     } 
   
     let video_id = YT_PATTERNS.iter() 
@@ -61,7 +62,7 @@ async fn analyze_handler(req: Request) -> Result<Response<Body>, Error> {
   
     let thumbnail = match video_id { 
         Some(id) => format!("https://img.youtube.com/vi/{}/maxresdefault.jpg", id), 
-        None => return json_error( 
+        None => return error_response( 
             StatusCode::BAD_REQUEST, 
             "Unsupported platform. YouTube links only for now (youtube.com, youtu.be, shorts)." 
         ), 
@@ -87,16 +88,13 @@ async fn analyze_handler(req: Request) -> Result<Response<Body>, Error> {
         thumbnail: Some(thumbnail), 
     }; 
   
-    let json_bytes = match serde_json::to_vec(&response_body) { 
-        Ok(b) => b, 
-        Err(_) => return json_error(StatusCode::INTERNAL_SERVER_ERROR, "Failed to serialize response"), 
-    }; 
+    let json_bytes = serde_json::to_vec(&response_body).unwrap(); 
   
     Ok(Response::builder() 
         .status(StatusCode::OK) 
         .header("Content-Type", "application/json") 
         .header("Access-Control-Allow-Origin", ALLOWED_ORIGIN) 
-        .body(Body::from(json_bytes))?) 
+        .body(Body::Text(String::from_utf8_lossy(&json_bytes).into_owned()))?) 
 } 
   
  fn preflight_response() -> Result<Response<Body>, Error> { 
@@ -108,13 +106,13 @@ async fn analyze_handler(req: Request) -> Result<Response<Body>, Error> {
          .body(Body::Empty)?) 
  } 
   
- fn json_error(status: StatusCode, msg: &str) -> Result<Response<Body>, Error> { 
+ fn error_response(status: StatusCode, msg: &str) -> Result<Response<Body>, Error> { 
      let json = json!({"error": msg}); 
      Ok(Response::builder() 
          .status(status) 
          .header("Content-Type", "application/json") 
          .header("Access-Control-Allow-Origin", ALLOWED_ORIGIN) 
-         .body(Body::from(serde_json::to_vec(&json).unwrap()))?) 
+         .body(Body::Text(json.to_string()))?) 
  } 
   
  async fn call_sightengine(image_url: &str) -> Result<f32, String> { 
