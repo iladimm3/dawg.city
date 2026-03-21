@@ -1,11 +1,11 @@
 { 
   "functions": { 
-    "api/analyze/src/main.rs": { 
-      "runtime": "vercel-rust@4" 
+    "api/analyze.rs": { 
+      "runtime": "vercel-rust@0.3.0" 
     } 
   },
   "rewrites": [
-    { "source": "/api/analyze", "destination": "/api/analyze/src/main.rs" },
+    { "source": "/api/analyze", "destination": "/api/analyze.rs" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
