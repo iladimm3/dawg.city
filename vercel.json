@@ -3,9 +3,5 @@
     "api/analyze.rs": { 
       "runtime": "vercel-rust@0.3.0" 
     } 
-  },
-  "rewrites": [
-    { "source": "/api/analyze", "destination": "/api/analyze.rs" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
+  } 
+} 
