@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize}; 
-use vercel_runtime::{run, service_fn, Body, Error, Request, Response, StatusCode}; 
+use vercel_runtime::{run, service_fn, Body, Error, Request, Response}; 
+use http::StatusCode;
 use serde_json::json; 
 use once_cell::sync::Lazy; 
 use regex::Regex; 
@@ -96,7 +97,7 @@ async fn analyze_handler(req: Request) -> Result<Response<Body>, Error> {
         .status(StatusCode::OK) 
         .header("Content-Type", "application/json") 
         .header("Access-Control-Allow-Origin", ALLOWED_ORIGIN) 
-        .body(json_bytes.into())?) 
+        .body(Body::from(json_bytes))?) 
 } 
   
  fn preflight_response() -> Result<Response<Body>, Error> { 
@@ -105,7 +106,7 @@ async fn analyze_handler(req: Request) -> Result<Response<Body>, Error> {
          .header("Access-Control-Allow-Origin", ALLOWED_ORIGIN) 
          .header("Access-Control-Allow-Methods", "POST, OPTIONS") 
          .header("Access-Control-Allow-Headers", "Content-Type") 
-         .body(vec![].into())?) 
+         .body(Body::Empty)?) 
  } 
   
  fn json_error(status: StatusCode, msg: &str) -> Result<Response<Body>, Error> { 
@@ -114,7 +115,7 @@ async fn analyze_handler(req: Request) -> Result<Response<Body>, Error> {
          .status(status) 
          .header("Content-Type", "application/json") 
          .header("Access-Control-Allow-Origin", ALLOWED_ORIGIN) 
-         .body(serde_json::to_vec(&json).unwrap().into())?) 
+         .body(Body::from(serde_json::to_vec(&json).unwrap()))?) 
  } 
   
  async fn call_sightengine(image_url: &str) -> Result<f32, String> { 
