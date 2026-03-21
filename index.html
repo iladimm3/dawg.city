@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dawg.city — AI or Real?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a;
+            color: #ededed;
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #60a5fa, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #60a5fa;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-6 sm:p-12">
+    
+    <div class="w-full max-w-2xl space-y-12">
+        <!-- Header -->
+        <header class="text-center space-y-4">
+            <h1 class="text-6xl sm:text-7xl font-extrabold tracking-tighter gradient-text">dawg.city</h1>
+            <p class="text-zinc-400 text-lg sm:text-xl font-medium">Instantly detect AI-generated YouTube content.</p>
+        </header>
+
+        <!-- Search Input -->
+        <div class="glass-panel rounded-2xl p-2 flex flex-col sm:flex-row gap-2 transition-all focus-within:ring-2 focus-within:ring-blue-500/50">
+            <input 
+                type="text" 
+                id="url-input" 
+                placeholder="Paste YouTube URL (Video, Shorts, Live)..." 
+                class="bg-transparent border-none focus:ring-0 text-white placeholder-zinc-500 flex-1 px-4 py-3 text-lg"
+            >
+            <button 
+                id="analyze-btn" 
+                class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 py-3 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+                <span id="btn-text">Analyze</span>
+                <div id="btn-spinner" class="spinner hidden"></div>
+            </button>
+        </div>
+
+        <!-- Error Banner -->
+        <div id="error-banner" class="hidden bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-xl text-center font-medium animate-pulse">
+        </div>
+
+        <!-- Result Card -->
+        <div id="result-card" class="hidden glass-panel rounded-3xl overflow-hidden transition-all duration-500 transform scale-95 opacity-0">
+            <div class="relative aspect-video w-full bg-zinc-900">
+                <img id="result-thumbnail" src="" alt="Thumbnail" class="w-full h-full object-cover">
+                <div id="verdict-badge" class="absolute top-4 right-4 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider shadow-lg">
+                </div>
+            </div>
+            <div class="p-8 space-y-6">
+                <div class="space-y-2">
+                    <div class="flex justify-between items-end">
+                        <span class="text-zinc-500 font-bold text-xs uppercase tracking-widest">Confidence Score</span>
+                        <span id="confidence-pct" class="text-2xl font-extrabold text-white">0%</span>
+                    </div>
+                    <div class="w-full bg-zinc-800 rounded-full h-3 overflow-hidden">
+                        <div id="confidence-bar" class="h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
+                    </div>
+                </div>
+                <p id="result-details" class="text-zinc-300 leading-relaxed text-lg"></p>
+            </div>
+        </div>
+
+        <!-- Examples Section -->
+        <section class="space-y-6">
+            <h2 class="text-zinc-500 font-bold text-xs uppercase tracking-widest text-center">Try these examples</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button onclick="fillExample('https://www.youtube.com/watch?v=LXb3EKWsInQ')" class="glass-panel hover:bg-white/5 p-4 rounded-xl text-left transition-all group">
+                    <p class="text-xs text-zinc-500 mb-1 group-hover:text-red-400 transition-colors">AI Generated</p>
+                    <p class="text-sm font-semibold truncate text-zinc-300">Will Smith Eating Spaghetti</p>
+                </button>
+                <button onclick="fillExample('https://www.youtube.com/watch?v=dQw4w9WgXcQ')" class="glass-panel hover:bg-white/5 p-4 rounded-xl text-left transition-all group">
+                    <p class="text-xs text-zinc-500 mb-1 group-hover:text-green-400 transition-colors">Likely Real</p>
+                    <p class="text-sm font-semibold truncate text-zinc-300">Rick Astley - Never Gonna Give You Up</p>
+                </button>
+                <button onclick="fillExample('https://www.youtube.com/shorts/3n71EaW5CjU')" class="glass-panel hover:bg-white/5 p-4 rounded-xl text-left transition-all group">
+                    <p class="text-xs text-zinc-500 mb-1 group-hover:text-yellow-400 transition-colors">Unsure / Shorts</p>
+                    <p class="text-sm font-semibold truncate text-zinc-300">Hyper-realistic AI Human</p>
+                </button>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="text-center pt-8 border-t border-zinc-900">
+            <p class="text-zinc-600 text-sm">© 2026 dawg.city • Powered by Sightengine GenAI Detection</p>
+        </footer>
+    </div>
+
+    <script>
+        const input = document.getElementById('url-input');
+        const btn = document.getElementById('analyze-btn');
+        const btnText = document.getElementById('btn-text');
+        const btnSpinner = document.getElementById('btn-spinner');
+        const errorBanner = document.getElementById('error-banner');
+        const resultCard = document.getElementById('result-card');
+        const resultThumbnail = document.getElementById('result-thumbnail');
+        const verdictBadge = document.getElementById('verdict-badge');
+        const confidencePct = document.getElementById('confidence-pct');
+        const confidenceBar = document.getElementById('confidence-bar');
+        const resultDetails = document.getElementById('result-details');
+
+        function fillExample(url) {
+            input.value = url;
+            analyze();
+        }
+
+        async function analyze() {
+            const url = input.value.trim();
+            if (!url) return;
+
+            // Reset UI
+            errorBanner.classList.add('hidden');
+            resultCard.classList.add('hidden');
+            resultCard.classList.replace('scale-100', 'scale-95');
+            resultCard.classList.replace('opacity-100', 'opacity-0');
+            
+            // Loading state
+            btn.disabled = true;
+            btnText.classList.add('hidden');
+            btnSpinner.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Something went wrong');
+                }
+
+                // Update result card
+                resultThumbnail.src = data.thumbnail || '';
+                resultDetails.textContent = data.details;
+                
+                // Verdict styling
+                let colorClass = 'bg-yellow-500 text-black';
+                let label = 'Unsure';
+                let barColor = 'bg-yellow-500';
+
+                if (data.verdict === 'ai_generated') {
+                    colorClass = 'bg-red-600 text-white';
+                    label = 'AI Generated';
+                    barColor = 'bg-red-600';
+                } else if (data.verdict === 'likely_real') {
+                    colorClass = 'bg-green-500 text-black';
+                    label = 'Likely Real';
+                    barColor = 'bg-green-500';
+                }
+
+                verdictBadge.className = `absolute top-4 right-4 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider shadow-lg ${colorClass}`;
+                verdictBadge.textContent = label;
+                
+                confidencePct.textContent = `${Math.round(data.confidence * 100)}%`;
+                confidenceBar.className = `h-full rounded-full transition-all duration-1000 ease-out ${barColor}`;
+                confidenceBar.style.width = '0%';
+                
+                // Show result card
+                resultCard.classList.remove('hidden');
+                setTimeout(() => {
+                    resultCard.classList.replace('scale-95', 'scale-100');
+                    resultCard.classList.replace('opacity-0', 'opacity-100');
+                    confidenceBar.style.width = `${data.confidence * 100}%`;
+                }, 50);
+
+            } catch (err) {
+                errorBanner.textContent = err.message;
+                errorBanner.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.classList.remove('hidden');
+                btnSpinner.classList.add('hidden');
+            }
+        }
+
+        btn.addEventListener('click', analyze);
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') analyze();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+/target
+**/*.rs.bk
+.vercel
+.env
+node_modules
+.DS_Store
