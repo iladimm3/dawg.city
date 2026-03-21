@@ -12,8 +12,11 @@
 ```text
 dawg.city/
 ├── index.html       # Single-file frontend (Tailwind + Vanilla JS)
-├── Cargo.toml       # Rust dependencies
-├── api/analyze.rs   # Serverless Rust function for Vercel
+├── api/
+│   └── analyze/
+│       ├── Cargo.toml  # Rust dependencies
+│       └── src/
+│           └── main.rs # Serverless Rust function for Vercel
 ├── vercel.json      # Vercel configuration
 └── README.md        # This file
 ```
