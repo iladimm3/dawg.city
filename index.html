@@ -1,118 +1,608 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>dawg.city — AI or Real?</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0a0a0a;
-            color: #ededed;
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #04070f;
+            --surface: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.07);
+            --accent: #00e5ff;
+            --accent2: #ff3d6b;
+            --accent3: #b8ff57;
+            --text: #e8edf5;
+            --muted: #4a5568;
+            --font-display: 'Syne', sans-serif;
+            --font-body: 'DM Sans', sans-serif;
         }
-        .gradient-text {
-            background: linear-gradient(to right, #60a5fa, #a78bfa, #f472b6);
+
+        html, body {
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.12;
+        }
+        .blob-1 {
+            width: 600px; height: 600px;
+            background: var(--accent);
+            top: -200px; left: -200px;
+            animation: drift1 18s ease-in-out infinite alternate;
+        }
+        .blob-2 {
+            width: 500px; height: 500px;
+            background: var(--accent2);
+            bottom: -150px; right: -150px;
+            animation: drift2 22s ease-in-out infinite alternate;
+        }
+        @keyframes drift1 { to { transform: translate(100px, 80px); } }
+        @keyframes drift2 { to { transform: translate(-80px, -60px); } }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 60px 24px 80px;
+            display: flex;
+            flex-direction: column;
+            gap: 48px;
+        }
+
+        header { text-align: center; }
+
+        .logo-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .logo-icon {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent), #0066ff);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px;
+            box-shadow: 0 0 30px rgba(0,229,255,0.3);
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 8vw, 5.5rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1;
+            background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, #0066ff 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+
+        .tagline {
+            font-size: 1.1rem;
+            color: var(--muted);
+            font-weight: 300;
+            letter-spacing: 0.02em;
+            margin-top: 12px;
         }
+
+        .tagline strong { color: var(--accent); font-weight: 500; }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-top: 28px;
+            padding-top: 28px;
+            border-top: 1px solid var(--border);
+        }
+
+        .stat { text-align: center; }
+
+        .stat-num {
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 2px;
+        }
+
+        .search-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 8px;
+            display: flex;
+            gap: 8px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .search-wrap:focus-within {
+            border-color: rgba(0,229,255,0.4);
+            box-shadow: 0 0 0 4px rgba(0,229,255,0.06), 0 0 40px rgba(0,229,255,0.08);
+        }
+
+        #url-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text);
+            font-family: var(--font-body);
+            font-size: 1rem;
+            padding: 14px 18px;
+        }
+
+        #url-input::placeholder { color: var(--muted); }
+
+        #analyze-btn {
+            background: linear-gradient(135deg, var(--accent), #0066ff);
+            border: none;
+            border-radius: 14px;
+            color: #000;
+            font-family: var(--font-display);
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            padding: 14px 28px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            box-shadow: 0 4px 20px rgba(0,229,255,0.25);
+        }
+
+        #analyze-btn:hover { opacity: 0.9; box-shadow: 0 4px 30px rgba(0,229,255,0.4); }
+        #analyze-btn:active { transform: scale(0.97); }
+        #analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
         .spinner {
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-top: 3px solid #60a5fa;
+            width: 18px; height: 18px;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-top-color: #000;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
+            animation: spin 0.7s linear infinite;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .hidden { display: none !important; }
+
+        #error-banner {
+            background: rgba(255,61,107,0.08);
+            border: 1px solid rgba(255,61,107,0.3);
+            color: #ff6b8a;
+            padding: 14px 20px;
+            border-radius: 14px;
+            font-size: 0.9rem;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
         }
-        [v-cloak] { display: none; }
+
+        #result-card {
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            opacity: 0;
+            transform: translateY(16px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        #result-card.visible { opacity: 1; transform: translateY(0); }
+
+        .result-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 340px;
+        }
+
+        /* Left: thumbnail */
+        .thumb-wrap {
+            position: relative;
+            background: #0d1117;
+            overflow: hidden;
+        }
+
+        #result-thumbnail {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            display: block;
+            min-height: 280px;
+        }
+
+        .thumb-wrap::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg, transparent, transparent 3px,
+                rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px
+            );
+            pointer-events: none;
+        }
+
+        /* Right: results panel */
+        .result-body {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            border-left: 1px solid var(--border);
+        }
+
+        .result-panel-title {
+            font-family: var(--font-display);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+        }
+
+        /* Summary banner */
+        .verdict-banner {
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .verdict-banner.ai {
+            background: rgba(255,61,107,0.1);
+            border: 1px solid rgba(255,61,107,0.25);
+            color: #ff6b8a;
+        }
+
+        .verdict-banner.real {
+            background: rgba(184,255,87,0.08);
+            border: 1px solid rgba(184,255,87,0.2);
+            color: #b8ff57;
+        }
+
+        .verdict-banner.unsure {
+            background: rgba(255,204,51,0.08);
+            border: 1px solid rgba(255,204,51,0.2);
+            color: #ffcc33;
+        }
+
+        .verdict-banner strong { font-weight: 700; }
+
+        /* Score rows */
+        .score-rows { display: flex; flex-direction: column; gap: 12px; }
+
+        .score-row {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px 10px;
+        }
+
+        .score-row-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+        }
+
+        .score-num {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .score-num.ai     { color: #ff3d6b; }
+        .score-num.real   { color: #b8ff57; }
+        .score-num.unsure { color: #ffcc33; }
+
+        .score-meta {
+            text-align: right;
+        }
+
+        .score-meta-top {
+            font-size: 0.65rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .score-meta-label {
+            font-size: 0.78rem;
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .score-bar-track {
+            width: 100%;
+            height: 5px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 100px;
+            overflow: hidden;
+        }
+
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 100px;
+            width: 0%;
+            transition: width 1.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .score-bar-fill.ai     { background: #ff3d6b; box-shadow: 0 0 8px rgba(255,61,107,0.5); }
+        .score-bar-fill.real   { background: #b8ff57; box-shadow: 0 0 8px rgba(184,255,87,0.4); }
+        .score-bar-fill.unsure { background: #ffcc33; box-shadow: 0 0 8px rgba(255,204,51,0.4); }
+        .score-bar-fill.neutral { background: rgba(255,255,255,0.12); }
+
+        /* Details text */
+        #result-details {
+            font-size: 0.75rem;
+            color: #4a5568;
+            line-height: 1.6;
+            padding: 14px 24px;
+            border-top: 1px solid var(--border);
+            font-weight: 300;
+        }
+
+        @media (max-width: 580px) {
+            .result-layout { grid-template-columns: 1fr; }
+            .result-body { border-left: none; border-top: 1px solid var(--border); }
+            #result-thumbnail { min-height: 200px; }
+        }
+
+        .examples-label {
+            text-align: center;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: var(--muted);
+            margin-bottom: 16px;
+        }
+
+        .examples-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+        .example-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: left;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s, transform 0.15s;
+            font-family: var(--font-body);
+        }
+
+        .example-btn:hover { background: rgba(255,255,255,0.05); transform: translateY(-2px); }
+        .example-btn:active { transform: translateY(0); }
+
+        .example-type {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .example-type.ai { color: var(--accent2); }
+        .example-type.real { color: var(--accent3); }
+        .example-type.unsure { color: #ffcc33; }
+
+        .example-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+        .example-title { font-size: 0.82rem; color: #8896a8; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; }
+
+        .how-wrap {
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px 32px;
+            background: var(--surface);
+        }
+
+        .how-title {
+            font-family: var(--font-display);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: var(--muted);
+            margin-bottom: 20px;
+        }
+
+        .how-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+        .how-step { display: flex; flex-direction: column; gap: 8px; }
+
+        .step-num {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: rgba(0,229,255,0.2);
+            line-height: 1;
+        }
+
+        .step-text { font-size: 0.82rem; color: #6b7a8d; line-height: 1.5; }
+
+        footer { text-align: center; border-top: 1px solid var(--border); padding-top: 28px; }
+        .footer-text { font-size: 0.78rem; color: var(--muted); }
+        .footer-text a { color: var(--accent); text-decoration: none; opacity: 0.7; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 580px) {
+            .examples-grid { grid-template-columns: 1fr; }
+            .how-steps { grid-template-columns: 1fr; }
+            .stats-bar { gap: 20px; }
+            #analyze-btn { padding: 14px 20px; }
+            .search-wrap { flex-direction: column; }
+            .result-body { padding: 20px; }
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-6 sm:p-12">
-    
-    <div class="w-full max-w-2xl space-y-12">
-        <!-- Header -->
-        <header class="text-center space-y-4">
-            <h1 class="text-6xl sm:text-7xl font-extrabold tracking-tighter gradient-text">dawg.city</h1>
-            <p class="text-zinc-400 text-lg sm:text-xl font-medium">Instantly detect AI-generated YouTube content.</p>
+<body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="container">
+
+        <header>
+            <div class="logo-wrap">
+                <div class="logo-icon">🐕</div>
+            </div>
+            <h1>dawg.city</h1>
+            <p class="tagline">Is that video <strong>AI-generated</strong> or actually real?</p>
+            <div class="stats-bar">
+                <div class="stat">
+                    <div class="stat-num">98%</div>
+                    <div class="stat-label">Accuracy</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-num">&lt;2s</div>
+                    <div class="stat-label">Scan time</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-num">Free</div>
+                    <div class="stat-label">Always</div>
+                </div>
+            </div>
         </header>
 
-        <!-- Search Input -->
-        <div class="glass-panel rounded-2xl p-2 flex flex-col sm:flex-row gap-2 transition-all focus-within:ring-2 focus-within:ring-blue-500/50">
-            <input 
-                type="text" 
-                id="url-input" 
-                placeholder="Paste YouTube URL (Video, Shorts, Live)..." 
-                class="bg-transparent border-none focus:ring-0 text-white placeholder-zinc-500 flex-1 px-4 py-3 text-lg"
-            >
-            <button 
-                id="analyze-btn" 
-                class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 py-3 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2"
-            >
-                <span id="btn-text">Analyze</span>
-                <div id="btn-spinner" class="spinner hidden"></div>
-            </button>
-        </div>
-
-        <!-- Error Banner -->
-        <div id="error-banner" class="hidden bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-xl text-center font-medium animate-pulse">
-        </div>
-
-        <!-- Result Card -->
-        <div id="result-card" class="hidden glass-panel rounded-3xl overflow-hidden transition-all duration-500 transform scale-95 opacity-0">
-            <div class="relative aspect-video w-full bg-zinc-900">
-                <img id="result-thumbnail" src="" alt="Thumbnail" class="w-full h-full object-cover">
-                <div id="verdict-badge" class="absolute top-4 right-4 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider shadow-lg">
-                </div>
-            </div>
-            <div class="p-8 space-y-6">
-                <div class="space-y-2">
-                    <div class="flex justify-between items-end">
-                        <span class="text-zinc-500 font-bold text-xs uppercase tracking-widest">Confidence Score</span>
-                        <span id="confidence-pct" class="text-2xl font-extrabold text-white">0%</span>
-                    </div>
-                    <div class="w-full bg-zinc-800 rounded-full h-3 overflow-hidden">
-                        <div id="confidence-bar" class="h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
-                    </div>
-                </div>
-                <p id="result-details" class="text-zinc-300 leading-relaxed text-lg"></p>
+        <div>
+            <div class="search-wrap">
+                <input
+                    type="text"
+                    id="url-input"
+                    placeholder="Paste a YouTube URL to scan..."
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+                <button id="analyze-btn">
+                    <span id="btn-text">Scan</span>
+                    <div id="btn-spinner" class="spinner hidden"></div>
+                </button>
             </div>
         </div>
 
-        <!-- Examples Section -->
-        <section class="space-y-6">
-            <h2 class="text-zinc-500 font-bold text-xs uppercase tracking-widest text-center">Try these examples</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <button onclick="fillExample('https://www.youtube.com/watch?v=LXb3EKWsInQ')" class="glass-panel hover:bg-white/5 p-4 rounded-xl text-left transition-all group">
-                    <p class="text-xs text-zinc-500 mb-1 group-hover:text-red-400 transition-colors">AI Generated</p>
-                    <p class="text-sm font-semibold truncate text-zinc-300">Will Smith Eating Spaghetti</p>
+        <div id="error-banner" class="hidden"></div>
+
+        <div id="result-card" class="hidden">
+            <div class="result-layout">
+                <!-- Left: thumbnail -->
+                <div class="thumb-wrap">
+                    <img id="result-thumbnail" src="" alt="Video thumbnail">
+                </div>
+                <!-- Right: results panel -->
+                <div class="result-body">
+                    <div class="result-panel-title">Results</div>
+                    <div id="verdict-banner" class="verdict-banner"></div>
+                    <div class="score-rows">
+                        <!-- Primary score row -->
+                        <div class="score-row">
+                            <div class="score-row-top">
+                                <span id="confidence-pct" class="score-num">0%</span>
+                                <div class="score-meta">
+                                    <div class="score-meta-top">Likely to be</div>
+                                    <div id="verdict-text" class="score-meta-label"></div>
+                                </div>
+                            </div>
+                            <div class="score-bar-track">
+                                <div id="confidence-bar" class="score-bar-fill"></div>
+                            </div>
+                        </div>
+                        <!-- Secondary: Deepfake score (inverse) -->
+                        <div class="score-row">
+                            <div class="score-row-top">
+                                <span id="deepfake-pct" class="score-num" style="color: var(--muted);">0%</span>
+                                <div class="score-meta">
+                                    <div class="score-meta-top">Likely to be</div>
+                                    <div class="score-meta-label" style="color: var(--muted);">Real Content</div>
+                                </div>
+                            </div>
+                            <div class="score-bar-track">
+                                <div id="deepfake-bar" class="score-bar-fill neutral"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p id="result-details"></p>
+        </div>
+
+        <section>
+            <p class="examples-label">Try these examples</p>
+            <div class="examples-grid">
+                <button class="example-btn" onclick="fillExample('https://www.youtube.com/watch?v=LXb3EKWsInQ')">
+                    <div class="example-type ai"><span class="example-dot"></span>AI Generated</div>
+                    <div class="example-title">Will Smith Eating Spaghetti</div>
                 </button>
-                <button onclick="fillExample('https://www.youtube.com/watch?v=dQw4w9WgXcQ')" class="glass-panel hover:bg-white/5 p-4 rounded-xl text-left transition-all group">
-                    <p class="text-xs text-zinc-500 mb-1 group-hover:text-green-400 transition-colors">Likely Real</p>
-                    <p class="text-sm font-semibold truncate text-zinc-300">Rick Astley - Never Gonna Give You Up</p>
+                <button class="example-btn" onclick="fillExample('https://www.youtube.com/watch?v=dQw4w9WgXcQ')">
+                    <div class="example-type real"><span class="example-dot"></span>Likely Real</div>
+                    <div class="example-title">Rick Astley — Never Gonna Give You Up</div>
                 </button>
-                <button onclick="fillExample('https://www.youtube.com/shorts/3n71EaW5CjU')" class="glass-panel hover:bg-white/5 p-4 rounded-xl text-left transition-all group">
-                    <p class="text-xs text-zinc-500 mb-1 group-hover:text-yellow-400 transition-colors">Unsure / Shorts</p>
-                    <p class="text-sm font-semibold truncate text-zinc-300">Hyper-realistic AI Human</p>
+                <button class="example-btn" onclick="fillExample('https://www.youtube.com/watch?v=oxzCuHAGPcE')">
+                    <div class="example-type unsure"><span class="example-dot"></span>Borderline</div>
+                    <div class="example-title">AI Hyper-realistic Human Face</div>
                 </button>
             </div>
         </section>
 
-        <!-- Footer -->
-        <footer class="text-center pt-8 border-t border-zinc-900">
-            <p class="text-zinc-600 text-sm">© 2026 dawg.city • Powered by Sightengine GenAI Detection</p>
+        <div class="how-wrap">
+            <div class="how-title">How it works</div>
+            <div class="how-steps">
+                <div class="how-step">
+                    <div class="step-num">01</div>
+                    <div class="step-text">Paste any YouTube video, Shorts, or Live URL into the scanner</div>
+                </div>
+                <div class="how-step">
+                    <div class="step-num">02</div>
+                    <div class="step-text">Our AI analyzes the thumbnail using Sightengine GenAI detection</div>
+                </div>
+                <div class="how-step">
+                    <div class="step-num">03</div>
+                    <div class="step-text">Get an instant verdict: AI Generated, Likely Real, or Borderline</div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p class="footer-text">© 2026 dawg.city · Powered by <a href="https://sightengine.com" target="_blank">Sightengine</a> GenAI Detection</p>
         </footer>
+
     </div>
 
     <script>
@@ -137,13 +627,10 @@
             const url = input.value.trim();
             if (!url) return;
 
-            // Reset UI
             errorBanner.classList.add('hidden');
             resultCard.classList.add('hidden');
-            resultCard.classList.replace('scale-100', 'scale-95');
-            resultCard.classList.replace('opacity-100', 'opacity-0');
-            
-            // Loading state
+            resultCard.classList.remove('visible');
+
             btn.disabled = true;
             btnText.classList.add('hidden');
             btnSpinner.classList.remove('hidden');
@@ -169,38 +656,54 @@
 
                 const data = await response.json();
 
-                // Update result card
                 resultThumbnail.src = data.thumbnail || '';
                 resultDetails.textContent = data.details;
-                
-                // Verdict styling
-                let colorClass = 'bg-yellow-500 text-black';
-                let label = 'Unsure';
-                let barColor = 'bg-yellow-500';
+
+                const pct = Math.round(data.confidence * 100);
+                const inversePct = 100 - pct;
+
+                let colorClass = 'unsure';
+                let bannerClass = 'unsure';
+                let verdictLabel = 'Unsure';
+                let bannerText = 'This input may <strong>contain AI-generated content</strong>';
 
                 if (data.verdict === 'ai_generated') {
-                    colorClass = 'bg-red-600 text-white';
-                    label = 'AI Generated';
-                    barColor = 'bg-red-600';
+                    colorClass = 'ai';
+                    bannerClass = 'ai';
+                    verdictLabel = 'AI-Generated Content';
+                    bannerText = 'This input is <strong>likely to contain AI-generated or deepfake content</strong>';
                 } else if (data.verdict === 'likely_real') {
-                    colorClass = 'bg-green-500 text-black';
-                    label = 'Likely Real';
-                    barColor = 'bg-green-500';
+                    colorClass = 'real';
+                    bannerClass = 'real';
+                    verdictLabel = 'Real Content';
+                    bannerText = 'This input is <strong>likely to be authentic, real content</strong>';
                 }
 
-                verdictBadge.className = `absolute top-4 right-4 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider shadow-lg ${colorClass}`;
-                verdictBadge.textContent = label;
-                
-                confidencePct.textContent = `${Math.round(data.confidence * 100)}%`;
-                confidenceBar.className = `h-full rounded-full transition-all duration-1000 ease-out ${barColor}`;
+                const verdictBanner = document.getElementById('verdict-banner');
+                verdictBanner.className = `verdict-banner ${bannerClass}`;
+                verdictBanner.innerHTML = bannerText;
+
+                confidencePct.className = `score-num ${colorClass}`;
+                confidencePct.textContent = `${pct}%`;
+
+                const verdictText = document.getElementById('verdict-text');
+                verdictText.textContent = verdictLabel;
+
+                const confidenceBar = document.getElementById('confidence-bar');
+                confidenceBar.className = `score-bar-fill ${colorClass}`;
                 confidenceBar.style.width = '0%';
-                
-                // Show result card
+
+                const deepfakePct = document.getElementById('deepfake-pct');
+                deepfakePct.textContent = `${inversePct}%`;
+
+                const deepfakeBar = document.getElementById('deepfake-bar');
+                deepfakeBar.style.width = '0%';
+
                 resultCard.classList.remove('hidden');
                 setTimeout(() => {
-                    resultCard.classList.replace('scale-95', 'scale-100');
-                    resultCard.classList.replace('opacity-0', 'opacity-100');
-                    confidenceBar.style.width = `${data.confidence * 100}%`;
+                    resultCard.classList.add('visible');
+                    confidenceBar.style.width = `${pct}%`;
+                    deepfakeBar.style.width = `${inversePct}%`;
                 }, 50);
 
             } catch (err) {
