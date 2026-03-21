@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize}; 
-use vercel_runtime::{run, service_fn, Body, Error, Request, Response, StatusCode}; 
+use vercel_runtime::{run, Body, Error, Request, Response, StatusCode}; 
 use serde_json::json; 
 use once_cell::sync::Lazy; 
 use regex::Regex; 
@@ -29,7 +29,7 @@ const ALLOWED_ORIGIN: &str = "https://dawg.city";
   
 #[tokio::main] 
 async fn main() -> Result<(), Error> { 
-    run(service_fn(analyze_handler)).await 
+    run(analyze_handler).await 
 } 
   
 async fn analyze_handler(req: Request) -> Result<Response<Body>, Error> { 
