@@ -1134,7 +1134,10 @@
 <!-- NAV -->
 <nav>
     <a href="/" class="nav-logo">dawg<span class="dot">.</span>city</a>
-    <a href="#" class="nav-signin" onclick="openSignIn(event)">Sign in</a>
+    <div style="display:flex;align-items:center;gap:8px;">
+        <a href="/blog.html" class="nav-signin">Blog</a>
+        <a href="#" class="nav-signin" onclick="openSignIn(event)">Sign in</a>
+    </div>
 </nav>
 
 <!-- HERO + SCAN -->
@@ -1306,7 +1309,7 @@
                     <span class="aff-icon">📬</span>
                     <div class="aff-body">
                         <div class="aff-title">Weekly AI Detection News</div>
-                        <div class="aff-desc">Deepfakes, AI tools & detection tips — every Wednesday. Zero spam.</div>
+                        <div class="aff-desc">Deepfakes, AI tools & detection tips — every Wednesday.</div>
                     </div>
                 </div>
                 <script src="https://f.convertkit.com/ckjs/ck.5.js"></script>
@@ -1329,16 +1332,9 @@
                             <span>Subscribe Free</span>
                         </button>
                     </div>
-                    <div style="font-size:0.75rem;color:var(--text-3);margin-top:6px;">Zero spam. Unsubscribe anytime.</div>
+                    <div style="font-size:0.75rem;color:var(--text-3);margin-top:6px;"></div>
             </form>
             </div>
-        </div>
-
-        <!-- Scan another -->
-        <div class="scan-another-wrap">
-            <button class="scan-another-btn" onclick="scanAnother()">
-                🔄 Scan Another Video
-            </button>
         </div>
 
     </div>
