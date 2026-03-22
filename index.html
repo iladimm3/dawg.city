@@ -576,7 +576,51 @@
             .cookie-accept, .cookie-decline { flex: 1; text-align: center; }
         }
 
-        /* ── MONETIZATION ── */
+        /* Upload button */
+        .upload-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--white);
+            border: 1.5px dashed var(--border-dark);
+            border-radius: 100px;
+            color: var(--text-2);
+            font-family: var(--font);
+            font-size: 0.88rem; font-weight: 600;
+            padding: 10px 20px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: border-color 0.15s, color 0.15s, background 0.15s;
+        }
+        .upload-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+
+        .or-divider {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.78rem; color: var(--text-3);
+            max-width: 600px; margin: 0 auto;
+        }
+        .or-divider::before, .or-divider::after {
+            content: ''; flex: 1; height: 1px; background: var(--border);
+        }
+
+        /* Scan another button */
+        .scan-another-wrap {
+            max-width: 640px; margin: 0 auto;
+            padding: 16px 24px 0;
+            text-align: center;
+        }
+
+        .scan-another-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: none;
+            border: 1.5px solid var(--border-dark);
+            border-radius: 100px;
+            color: var(--text-2);
+            font-family: var(--font);
+            font-size: 0.875rem; font-weight: 600;
+            padding: 10px 24px;
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s, background 0.15s;
+        }
+        .scan-another-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
 
         /* Upgrade button */
         .upgrade-wrap {
@@ -785,6 +829,15 @@
             </button>
         </div>
 
+        <div class="or-divider">or</div>
+
+        <div style="text-align:center;">
+            <a href="https://scanner.deepware.ai" target="_blank" rel="noopener" class="upload-btn">
+                📁 Upload a Video File
+            </a>
+            <p style="font-size:0.72rem;color:var(--text-3);margin-top:8px;">Video upload powered by Deepware — opens in new tab</p>
+        </div>
+
         <label class="tos-row">
             <input type="checkbox" id="tos-checkbox" checked>
             <span>By submitting data, you are agreeing to our <a href="/privacy.html">Terms of Services</a> and <a href="/privacy.html">Privacy Policy</a></span>
@@ -967,6 +1020,13 @@
                     </a>
                 </div>
             </div>
+        </div>
+
+        <!-- Scan another -->
+        <div class="scan-another-wrap">
+            <button class="scan-another-btn" onclick="scanAnother()">
+                🔄 Scan Another Video
+            </button>
         </div>
 
     </div>
@@ -1177,10 +1237,22 @@
     function submitEmail() {
         const email = document.getElementById('email-input').value.trim();
         if (!email || !email.includes('@')) return;
-        // Placeholder — wire to Mailchimp/ConvertKit later
         document.getElementById('email-success').classList.remove('hidden');
         document.getElementById('email-input').disabled = true;
         document.querySelector('.email-btn').disabled = true;
+    }
+
+    function scanAnother() {
+        // Reset everything
+        input.value = '';
+        errorBanner.classList.add('hidden');
+        resultCard.classList.add('hidden');
+        resultCard.classList.remove('visible');
+        document.getElementById('mono-section').classList.add('hidden');
+        document.querySelectorAll('.strip-pill').forEach(p => p.style.background = '');
+        // Scroll back to input
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => input.focus(), 400);
     }
 
     // Hide mono-section on new scan
