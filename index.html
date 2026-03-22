@@ -1733,31 +1733,23 @@
     async function initAuth() {
         if (!_sb) return;
 
-        // Handle OAuth redirect back to page
-        const { data: { session }, error } = await _sb.auth.getSession();
+        // First check if we have an existing session
+        const { data: { session } } = await _sb.auth.getSession();
         if (session?.user) {
             await onSignedIn(session.user);
+            return;
         }
 
-        // Also try to exchange code from URL if present (PKCE flow)
-        const params = new URLSearchParams(window.location.search);
-        const hashParams = new URLSearchParams(window.location.hash.replace('#', '?'));
-        if (params.get('code') || hashParams.get('access_token')) {
-            const { data, error: exchError } = await _sb.auth.exchangeCodeForSession(
-                window.location.href
-            );
-            if (data?.session?.user) {
-                await onSignedIn(data.session.user);
-                // Clean URL
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
-        }
-
+        // Listen for auth state changes — fires when OAuth redirect completes
         _sb.auth.onAuthStateChange(async (event, session) => {
             if (event === 'SIGNED_IN' && session?.user) {
                 await onSignedIn(session.user);
                 document.getElementById('signin-overlay').classList.remove('open');
                 document.body.style.overflow = '';
+                // Clean URL hash
+                if (window.location.hash) {
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
             } else if (event === 'SIGNED_OUT') {
                 onSignedOut();
             }
@@ -1835,7 +1827,7 @@
             provider: 'google',
             options: {
                 redirectTo: 'https://dawg.city',
-                queryParams: { access_type: 'offline', prompt: 'consent' }
+                flowType: 'implicit'
             }
         });
         if (error) {
