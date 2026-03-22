@@ -115,28 +115,45 @@
             margin-right: auto;
         }
 
-        /* URL input */
+        /* Sign in nav link */
+        .nav-signin {
+            font-size: 0.875rem; font-weight: 500;
+            color: var(--blue); text-decoration: none;
+            padding: 8px 16px; border-radius: 4px;
+            transition: background 0.15s;
+        }
+        .nav-signin:hover { background: var(--blue-light); }
+
+        /* URL input — Google style */
         .scan-box {
-            max-width: 600px;
+            max-width: 580px;
             margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
         }
 
         .url-row {
             display: flex;
-            gap: 0;
-            border: 2px solid var(--border-dark);
-            border-radius: 100px;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid var(--border-dark);
+            border-radius: 24px;
             background: var(--white);
-            overflow: hidden;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            padding: 12px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: box-shadow 0.2s, border-color 0.2s;
         }
 
+        .url-row:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+
         .url-row:focus-within {
-            border-color: var(--blue);
-            box-shadow: 0 0 0 4px rgba(26,110,245,0.1);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.14);
+            border-color: transparent;
+            outline: none;
+        }
+
+        .search-icon {
+            color: var(--text-3);
+            font-size: 1.1rem;
+            flex-shrink: 0;
         }
 
         #url-input {
@@ -144,9 +161,10 @@
             border: none; outline: none;
             background: transparent;
             font-family: var(--font);
-            font-size: 0.95rem;
+            font-size: 1rem;
             color: var(--text);
-            padding: 14px 20px;
+            padding: 0;
+            min-width: 0;
         }
 
         #url-input::placeholder { color: var(--text-3); }
@@ -154,23 +172,135 @@
         #analyze-btn {
             background: linear-gradient(135deg, var(--blue), var(--blue-dark));
             border: none;
-            border-radius: 100px;
+            border-radius: 20px;
             color: #fff;
             font-family: var(--font);
-            font-size: 0.95rem;
+            font-size: 0.875rem;
             font-weight: 700;
-            padding: 12px 28px;
+            padding: 8px 20px;
             cursor: pointer;
-            margin: 4px;
-            display: flex; align-items: center; gap: 8px;
+            flex-shrink: 0;
+            display: flex; align-items: center; gap: 6px;
             transition: opacity 0.15s, box-shadow 0.15s;
-            white-space: nowrap;
-            box-shadow: 0 4px 14px rgba(26,110,245,0.35);
+            box-shadow: 0 2px 8px rgba(26,110,245,0.3);
         }
 
-        #analyze-btn:hover { opacity: 0.92; box-shadow: 0 6px 20px rgba(26,110,245,0.45); }
+        #analyze-btn:hover { opacity: 0.92; box-shadow: 0 4px 14px rgba(26,110,245,0.4); }
         #analyze-btn:active { transform: scale(0.98); }
         #analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Footer TOS */
+        .footer-tos {
+            font-size: 0.75rem; color: var(--text-3);
+            margin-top: 6px;
+        }
+        .footer-tos a { color: var(--blue); text-decoration: none; }
+        .footer-tos a:hover { text-decoration: underline; }
+
+        /* ── SIGN IN / SIGN UP MODAL ── */
+        .auth-overlay {
+            position: fixed; inset: 0; z-index: 300;
+            background: rgba(15,20,30,0.5);
+            backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .auth-overlay.open { opacity: 1; pointer-events: all; }
+
+        .auth-modal {
+            background: var(--white);
+            border-radius: 20px;
+            width: 100%; max-width: 400px;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+            padding: 36px 32px;
+            transform: translateY(16px) scale(0.97);
+            transition: transform 0.25s ease;
+            position: relative;
+        }
+        .auth-overlay.open .auth-modal { transform: translateY(0) scale(1); }
+
+        .auth-close {
+            position: absolute; top: 14px; right: 14px;
+            width: 30px; height: 30px;
+            background: var(--bg); border: none; border-radius: 50%;
+            font-size: 0.95rem; cursor: pointer; color: var(--text-2);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .auth-close:hover { background: var(--border); }
+
+        .auth-logo {
+            font-size: 1.5rem; font-weight: 800;
+            letter-spacing: -0.02em; text-align: center;
+            margin-bottom: 6px;
+        }
+        .auth-logo .dot { color: var(--blue); }
+
+        .auth-title {
+            font-size: 1.2rem; font-weight: 700;
+            text-align: center; margin-bottom: 4px;
+        }
+
+        .auth-sub {
+            font-size: 0.85rem; color: var(--text-2);
+            text-align: center; margin-bottom: 24px;
+        }
+
+        .auth-field {
+            display: flex; flex-direction: column; gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .auth-field label {
+            font-size: 0.8rem; font-weight: 600; color: var(--text-2);
+        }
+
+        .auth-field input {
+            border: 1px solid var(--border-dark);
+            border-radius: 8px; padding: 11px 14px;
+            font-family: var(--font); font-size: 0.9rem;
+            color: var(--text); background: var(--white);
+            outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .auth-field input:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(26,110,245,0.1);
+        }
+
+        .auth-btn {
+            width: 100%; padding: 12px;
+            background: var(--blue); border: none; border-radius: 8px;
+            color: #fff; font-family: var(--font);
+            font-size: 0.95rem; font-weight: 700;
+            cursor: pointer; margin-top: 6px;
+            transition: background 0.15s, box-shadow 0.15s;
+            box-shadow: 0 4px 12px rgba(26,110,245,0.3);
+        }
+        .auth-btn:hover { background: var(--blue-dark); }
+
+        .auth-switch {
+            text-align: center; margin-top: 18px;
+            font-size: 0.82rem; color: var(--text-2);
+        }
+        .auth-switch a {
+            color: var(--blue); text-decoration: none; font-weight: 600; cursor: pointer;
+        }
+        .auth-switch a:hover { text-decoration: underline; }
+
+        .auth-error {
+            background: #fff5f5; border: 1px solid #fecaca;
+            color: var(--red); padding: 10px 14px;
+            border-radius: 8px; font-size: 0.82rem;
+            margin-bottom: 14px; text-align: center;
+        }
+
+        .auth-success {
+            background: #f0fff8; border: 1px solid #9ae6b4;
+            color: var(--green); padding: 10px 14px;
+            border-radius: 8px; font-size: 0.82rem;
+            margin-bottom: 14px; text-align: center;
+        }
 
         .spinner {
             width: 18px; height: 18px;
@@ -1004,18 +1134,20 @@
 <!-- NAV -->
 <nav>
     <a href="/" class="nav-logo">dawg<span class="dot">.</span>city</a>
+    <a href="#" class="nav-signin" onclick="openSignIn(event)">Sign in</a>
 </nav>
 
 <!-- HERO + SCAN -->
 <section class="hero">
-    <h1 class="hero-title">Scan &amp; Detect<br>AI-Generated Videos</h1>
+    <h1 class="hero-title">Scan AI-Videos</h1>
 
     <div class="scan-box">
         <div class="url-row">
+            <span class="search-icon">🔍</span>
             <input
                 type="url"
                 id="url-input"
-                placeholder="Paste a video link or upload a video for AI-Generated detection"
+                placeholder="Paste a video link for AI-Generated detection"
                 autocomplete="off"
                 spellcheck="false"
                 inputmode="url"
@@ -1025,19 +1157,6 @@
                 <div id="btn-spinner" class="spinner hidden"></div>
             </button>
         </div>
-
-        <label class="tos-row">
-            <input type="checkbox" id="tos-checkbox" checked>
-            <span>By submitting data, you are agreeing to our <a href="/privacy.html">Terms of Services</a> and <a href="/privacy.html">Privacy Policy</a></span>
-        </label>
-    </div>
-
-    <!-- Examples -->
-    <div class="examples-strip">
-        <span class="strip-label">Try an example →</span>
-        <button class="strip-pill" onclick="fillExample('https://youtube.com/shorts/7zdVCQ52kMQ?si=3XtBd1hqcKmTFON6', this)">🍝 Will Smith Spaghetti</button>
-        <button class="strip-pill" onclick="fillExample('https://www.youtube.com/watch?v=dQw4w9WgXcQ', this)">🎵 Rick Astley</button>
-        <button class="strip-pill" onclick="fillExample('https://youtube.com/shorts/p_qWMqhq-9o?si=zppOrzw6x_TmByj6', this)">🥋 Bruce Lee interview</button>
     </div>
 </section>
 
@@ -1256,7 +1375,6 @@
 
 <!-- FOOTER -->
 <footer>
-    <div class="footer-logo">dawg<span class="dot">.</span>city</div>
     <div class="footer-links">
         <a href="/about.html">About</a>
         <a href="/privacy.html">Privacy Policy</a>
@@ -1265,7 +1383,59 @@
         <a href="https://buymeacoffee.com/iladimm" target="_blank" rel="noopener">☕ Support Us</a>
     </div>
     <div class="footer-copy">© 2026 dawg.city · Free AI-generated video detector</div>
+    <div class="footer-tos">By using this service, you agree to our <a href="/privacy.html">Terms of Services</a> and <a href="/privacy.html">Privacy Policy</a></div>
 </footer>
+
+<!-- SIGN IN MODAL -->
+<div id="signin-overlay" class="auth-overlay" onclick="handleAuthClick(event,'signin-overlay')">
+    <div class="auth-modal">
+        <button class="auth-close" onclick="closeAuth()">✕</button>
+        <div class="auth-logo">dawg<span class="dot">.</span>city</div>
+        <div class="auth-title">Sign in</div>
+        <div class="auth-sub">Welcome back</div>
+        <div id="signin-error" class="auth-error hidden"></div>
+        <div class="auth-field">
+            <label>Email</label>
+            <input type="email" id="signin-email" placeholder="your@email.com" autocomplete="email">
+        </div>
+        <div class="auth-field">
+            <label>Password</label>
+            <input type="password" id="signin-password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="auth-btn" onclick="handleSignIn()">Sign in</button>
+        <div class="auth-switch">
+            Don't have an account? <a onclick="switchToSignUp()">Sign up</a>
+        </div>
+    </div>
+</div>
+
+<!-- SIGN UP MODAL -->
+<div id="signup-overlay" class="auth-overlay" onclick="handleAuthClick(event,'signup-overlay')">
+    <div class="auth-modal">
+        <button class="auth-close" onclick="closeAuth()">✕</button>
+        <div class="auth-logo">dawg<span class="dot">.</span>city</div>
+        <div class="auth-title">Create account</div>
+        <div class="auth-sub">Start scanning AI videos for free</div>
+        <div id="signup-error" class="auth-error hidden"></div>
+        <div id="signup-success" class="auth-success hidden"></div>
+        <div class="auth-field">
+            <label>First name</label>
+            <input type="text" id="signup-name" placeholder="Your name" autocomplete="given-name">
+        </div>
+        <div class="auth-field">
+            <label>Email</label>
+            <input type="email" id="signup-email" placeholder="your@email.com" autocomplete="email">
+        </div>
+        <div class="auth-field">
+            <label>Password</label>
+            <input type="password" id="signup-password" placeholder="At least 8 characters" autocomplete="new-password">
+        </div>
+        <button class="auth-btn" onclick="handleSignUp()">Create account</button>
+        <div class="auth-switch">
+            Already have an account? <a onclick="switchToSignIn()">Sign in</a>
+        </div>
+    </div>
+</div>
 
 <!-- UPGRADE MODAL -->
 <div id="upgrade-modal" class="modal-overlay" onclick="handleModalClick(event)">
@@ -1403,11 +1573,6 @@
         const url = input.value.trim();
         if (!url) { input.focus(); return; }
 
-        if (!tosCheckbox.checked) {
-            showError('Please agree to the Terms of Services before scanning.');
-            return;
-        }
-
         errorBanner.classList.add('hidden');
         resultCard.classList.add('hidden');
         resultCard.classList.remove('visible');
@@ -1517,8 +1682,70 @@
         if (e.target === document.getElementById('upgrade-modal')) closeUpgradeModal();
     }
 
-    // Close modal on Escape key
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeUpgradeModal(); });
+    function openSignIn(e) {
+        e.preventDefault();
+        document.getElementById('signin-overlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeAuth() {
+        document.getElementById('signin-overlay').classList.remove('open');
+        document.getElementById('signup-overlay').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    function handleAuthClick(e, id) {
+        if (e.target === document.getElementById(id)) closeAuth();
+    }
+
+    function switchToSignUp() {
+        document.getElementById('signin-overlay').classList.remove('open');
+        document.getElementById('signup-overlay').classList.add('open');
+    }
+
+    function switchToSignIn() {
+        document.getElementById('signup-overlay').classList.remove('open');
+        document.getElementById('signin-overlay').classList.add('open');
+    }
+
+    function handleSignIn() {
+        const email = document.getElementById('signin-email').value.trim();
+        const pass = document.getElementById('signin-password').value;
+        const err = document.getElementById('signin-error');
+        if (!email || !pass) {
+            err.textContent = 'Please fill in all fields.';
+            err.classList.remove('hidden'); return;
+        }
+        // Placeholder — wire to your auth backend
+        err.textContent = 'No account found. Please sign up first.';
+        err.classList.remove('hidden');
+        setTimeout(() => switchToSignUp(), 1800);
+    }
+
+    function handleSignUp() {
+        const name = document.getElementById('signup-name').value.trim();
+        const email = document.getElementById('signup-email').value.trim();
+        const pass = document.getElementById('signup-password').value;
+        const err = document.getElementById('signup-error');
+        const success = document.getElementById('signup-success');
+        if (!name || !email || !pass) {
+            err.textContent = 'Please fill in all fields.';
+            err.classList.remove('hidden'); return;
+        }
+        if (pass.length < 8) {
+            err.textContent = 'Password must be at least 8 characters.';
+            err.classList.remove('hidden'); return;
+        }
+        err.classList.add('hidden');
+        // Placeholder — wire to your auth backend
+        success.textContent = '✅ Account created! Sign-in coming soon.';
+        success.classList.remove('hidden');
+        setTimeout(() => closeAuth(), 2000);
+    }
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { closeUpgradeModal(); closeAuth(); }
+    });
 
     // Hide mono-section on new scan
     const origAnalyze = analyze;
