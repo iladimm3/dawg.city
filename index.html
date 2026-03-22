@@ -1732,16 +1732,49 @@
     // Init auth state on load
     async function initAuth() {
         if (!_sb) return;
-        const { data: { session } } = await _sb.auth.getSession();
-        if (session?.user) await onSignedIn(session.user);
+
+        // Handle OAuth redirect back to page
+        const { data: { session }, error } = await _sb.auth.getSession();
+        if (session?.user) {
+            await onSignedIn(session.user);
+        }
+
+        // Also try to exchange code from URL if present (PKCE flow)
+        const params = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.replace('#', '?'));
+        if (params.get('code') || hashParams.get('access_token')) {
+            const { data, error: exchError } = await _sb.auth.exchangeCodeForSession(
+                window.location.href
+            );
+            if (data?.session?.user) {
+                await onSignedIn(data.session.user);
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
         _sb.auth.onAuthStateChange(async (event, session) => {
             if (event === 'SIGNED_IN' && session?.user) {
                 await onSignedIn(session.user);
-                closeAuth();
+                document.getElementById('signin-overlay').classList.remove('open');
+                document.body.style.overflow = '';
             } else if (event === 'SIGNED_OUT') {
                 onSignedOut();
             }
         });
+    }
+
+    function submitEmail() {
+        const emailInput = document.getElementById('email-input');
+        if (!emailInput) return;
+        const email = emailInput.value.trim();
+        if (!email || !email.includes('@')) {
+            emailInput.style.borderColor = 'var(--red)';
+            return;
+        }
+        document.getElementById('newsletter-success').style.display = 'block';
+        emailInput.disabled = true;
+        document.querySelector('.email-btn') && (document.querySelector('.email-btn').disabled = true);
     }
 
     async function onSignedIn(user) {
@@ -1801,7 +1834,8 @@
         const { error } = await _sb.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: window.location.origin
+                redirectTo: 'https://dawg.city',
+                queryParams: { access_type: 'offline', prompt: 'consent' }
             }
         });
         if (error) {
