@@ -252,7 +252,104 @@
         .footer-tos a { color: var(--blue); text-decoration: none; }
         .footer-tos a:hover { text-decoration: underline; }
 
-        /* ── SIGN IN / SIGN UP MODAL ── */
+        /* ── SHARE BUTTON ── */
+        .share-row {
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px; padding: 14px 18px;
+            border-top: 1px solid var(--border);
+        }
+
+        .share-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 16px; border-radius: 8px;
+            font-family: var(--font); font-size: 0.82rem; font-weight: 600;
+            cursor: pointer; border: 1px solid var(--border);
+            transition: all 0.15s; text-decoration: none;
+        }
+
+        .share-btn-x {
+            background: #000; color: #fff; border-color: #000;
+        }
+        .share-btn-x:hover { background: #222; }
+
+        .share-btn-copy {
+            background: var(--bg); color: var(--text-2);
+        }
+        .share-btn-copy:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+
+        /* ── DISCLAIMER ── */
+        .disclaimer {
+            max-width: 640px; margin: 0 auto;
+            padding: 12px 24px;
+        }
+
+        .disclaimer-inner {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 10px;
+            padding: 10px 16px;
+            display: flex; align-items: flex-start; gap: 10px;
+            font-size: 0.78rem; color: #92400e; line-height: 1.5;
+        }
+
+        .disclaimer-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+        /* ── FAQ ── */
+        .faq-section {
+            background: var(--white);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .faq-inner {
+            max-width: 640px; margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        .faq-inner h2 {
+            font-size: 1.1rem; font-weight: 700;
+            letter-spacing: -0.01em; margin-bottom: 16px;
+            color: var(--text);
+        }
+
+        .faq-list { display: flex; flex-direction: column; gap: 2px; }
+
+        .faq-item {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .faq-q {
+            width: 100%; background: var(--white);
+            border: none; padding: 14px 18px;
+            font-family: var(--font); font-size: 0.88rem;
+            font-weight: 600; color: var(--text);
+            text-align: left; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: background 0.15s;
+        }
+
+        .faq-q:hover { background: var(--bg); }
+
+        .faq-chevron {
+            font-size: 0.75rem; color: var(--text-3);
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .faq-item.open .faq-chevron { transform: rotate(180deg); }
+
+        .faq-a {
+            display: none;
+            padding: 0 18px 14px;
+            font-size: 0.84rem; color: var(--text-2);
+            line-height: 1.7; border-top: 1px solid var(--border);
+            background: var(--bg);
+        }
+
+        .faq-item.open .faq-a { display: block; }
         .auth-overlay {
             position: fixed; inset: 0; z-index: 300;
             background: rgba(15,20,30,0.5);
@@ -1313,6 +1410,25 @@
         </div>
 
         <div class="powered-by">Powered by <a href="https://sightengine.com" target="_blank" rel="noopener">Sightengine</a></div>
+
+        <!-- Share buttons -->
+        <div class="share-row">
+            <button class="share-btn share-btn-x" onclick="shareOnX()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                Share on X
+            </button>
+            <button class="share-btn share-btn-copy" onclick="copyResult()">
+                📋 Copy result
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- DISCLAIMER -->
+<div class="disclaimer">
+    <div class="disclaimer-inner">
+        <span class="disclaimer-icon">⚠️</span>
+        <span>AI detection is probabilistic — results may have false positives or negatives. dawg.city is for informational purposes only and should not be used as the sole basis for any decision. Detection accuracy may vary as AI generation technology evolves.</span>
     </div>
 </div>
 
@@ -1438,6 +1554,60 @@
         </div>
     </div>
 </div>
+
+<!-- FAQ -->
+<section class="faq-section">
+    <div class="faq-inner">
+        <h2>Frequently Asked Questions</h2>
+        <div class="faq-list">
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    How does dawg.city detect AI-generated videos?
+                    <span class="faq-chevron">▼</span>
+                </button>
+                <div class="faq-a">
+                    dawg.city extracts the high-resolution thumbnail from any YouTube URL and runs it through <a href="https://sightengine.com" target="_blank" rel="noopener">Sightengine</a>'s GenAI detection model. The model returns a probability score indicating how likely the content is AI-generated or synthetic. We return a binary verdict — Fake or Real — based on a 50% confidence threshold.
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    Is the detection 100% accurate?
+                    <span class="faq-chevron">▼</span>
+                </button>
+                <div class="faq-a">
+                    No AI detector is 100% accurate. dawg.city is a probabilistic tool — it can have false positives (real videos flagged as fake) and false negatives (AI videos marked as real), especially as generation technology improves. Use it as a helpful indicator, not a definitive verdict.
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    Which video platforms are supported?
+                    <span class="faq-chevron">▼</span>
+                </button>
+                <div class="faq-a">
+                    Currently dawg.city supports YouTube videos, YouTube Shorts, and YouTube Live streams. Support for X (Twitter), TikTok, and direct video uploads is planned for future paid tiers.
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    Is dawg.city free to use?
+                    <span class="faq-chevron">▼</span>
+                </button>
+                <div class="faq-a">
+                    Yes — scanning YouTube URLs is completely free with no account required. Paid plans ($9/month Starter and $19/month Pro) unlock full video upload, batch scanning, and API access.
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    Does dawg.city store my scanned videos or data?
+                    <span class="faq-chevron">▼</span>
+                </button>
+                <div class="faq-a">
+                    No. URLs submitted for analysis are processed in real-time and are not stored on our servers. We only store your scan count if you are signed in. Read our <a href="/privacy.html">Privacy Policy</a> for full details.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
 <!-- FOOTER -->
 <footer>
@@ -1844,6 +2014,30 @@
     }
 
     // Make auth functions globally accessible from onclick attributes
+    window.shareOnX = function() {
+        const pct = document.getElementById('confidence-pct')?.textContent || '';
+        const verdict = document.getElementById('ring-verdict')?.textContent || '';
+        const url = document.getElementById('url-input')?.value || '';
+        const text = `I just scanned this video on dawg.city 🐕\n\nVerdict: ${verdict} (${pct} confidence)\n\nCheck it yourself 👇\nhttps://dawg.city`;
+        window.open(`https://x.com/intent/post?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    window.copyResult = function() {
+        const pct = document.getElementById('confidence-pct')?.textContent || '';
+        const verdict = document.getElementById('ring-verdict')?.textContent || '';
+        const url = document.getElementById('url-input')?.value || '';
+        const text = `dawg.city scan result:\nVerdict: ${verdict} (${pct} confidence)\nVideo: ${url}\nScan yours at https://dawg.city`;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.querySelector('.share-btn-copy');
+            if (btn) { btn.textContent = '✅ Copied!'; setTimeout(() => { btn.innerHTML = '📋 Copy result'; }, 2000); }
+        });
+    }
+
+    window.toggleFaq = function(btn) {
+        const item = btn.parentElement;
+        item.classList.toggle('open');
+    }
+
     window.openSignIn = function(e) {
         e.preventDefault();
         document.getElementById('signin-overlay').classList.add('open');
