@@ -1719,9 +1719,9 @@
     const SUPABASE_URL = 'https://uywuhvqsgzxltkvksvjv.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5d3VodnFzZ3p4bHRrdmtzdmp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDE0NDMsImV4cCI6MjA4OTc3NzQ0M30.VA_6lwzbU1IHuPpMgIpy7lcA0XiN0Op5PB4Tl3K3JLk';
 
-    let supabase;
+    _sb = null; // supabase client
     try {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     } catch(e) {
         console.error('Supabase init failed:', e);
     }
@@ -1731,10 +1731,10 @@
 
     // Init auth state on load
     async function initAuth() {
-        if (!supabase) return;
-        const { data: { session } } = await supabase.auth.getSession();
+        if (!_sb) return;
+        const { data: { session } } = await _sb.auth.getSession();
         if (session?.user) await onSignedIn(session.user);
-        supabase.auth.onAuthStateChange(async (event, session) => {
+        _sb.auth.onAuthStateChange(async (event, session) => {
             if (event === 'SIGNED_IN' && session?.user) {
                 await onSignedIn(session.user);
                 closeAuth();
@@ -1779,7 +1779,7 @@
             document.getElementById('nav-scan-num').textContent = scanCount;
         } else if (error?.code === 'PGRST116') {
             // Profile doesn't exist yet — create it
-            await supabase.from('profiles').insert({ id: userId, scan_count: 0 });
+            await _sb.from('profiles').insert({ id: userId, scan_count: 0 });
         }
     }
 
@@ -1793,12 +1793,12 @@
     }
 
     async function signInWithGoogle() {
-        if (!supabase) {
+        if (!_sb) {
             document.getElementById('signin-error').textContent = 'Auth not available. Please try again.';
             document.getElementById('signin-error').classList.remove('hidden');
             return;
         }
-        const { error } = await supabase.auth.signInWithOAuth({
+        const { error } = await _sb.auth.signInWithOAuth({
             provider: 'google',
             options: {
                 redirectTo: window.location.origin
@@ -1811,25 +1811,36 @@
     }
 
     async function signOut() {
-        if (!supabase) return;
-        await supabase.auth.signOut();
+        if (!_sb) return;
+        await _sb.auth.signOut();
         onSignedOut();
     }
 
-    function openSignIn(e) {
+    // Make auth functions globally accessible from onclick attributes
+    window.openSignIn = function(e) {
         e.preventDefault();
         document.getElementById('signin-overlay').classList.add('open');
         document.body.style.overflow = 'hidden';
     }
 
-    function closeAuth() {
+    window.closeAuth = function() {
         document.getElementById('signin-overlay').classList.remove('open');
         document.body.style.overflow = '';
     }
 
-    function handleAuthClick(e, id) {
-        if (e.target === document.getElementById(id)) closeAuth();
+    window.handleAuthClick = function(e, id) {
+        if (e.target === document.getElementById(id)) window.closeAuth();
     }
+
+    window.signInWithGoogle = signInWithGoogle;
+    window.signOut = signOut;
+    window.openUpgradeModal = openUpgradeModal;
+    window.closeUpgradeModal = closeUpgradeModal;
+    window.acceptCookies = acceptCookies;
+    window.dismissCookies = dismissCookies;
+    window.submitEmail = submitEmail;
+    window.scanAnother = scanAnother;
+    window.handleModalClick = handleModalClick;
 
     // Init on page load
     initAuth();
