@@ -575,6 +575,187 @@
             .cookie-btns { width: 100%; }
             .cookie-accept, .cookie-decline { flex: 1; text-align: center; }
         }
+
+        /* ── MONETIZATION ── */
+
+        /* Upgrade button */
+        .upgrade-wrap {
+            max-width: 640px; margin: 0 auto;
+            padding: 0 24px 8px;
+        }
+
+        .upgrade-btn {
+            display: flex; align-items: center; justify-content: space-between;
+            width: 100%;
+            background: linear-gradient(135deg, #1a2333, #2d3748);
+            border: 1px solid #4a5568;
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            text-decoration: none;
+            color: #fff;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            cursor: pointer;
+            font-family: var(--font);
+        }
+
+        .upgrade-btn:hover { border-color: var(--blue); box-shadow: 0 4px 16px rgba(26,110,245,0.2); }
+
+        .upgrade-left { display: flex; align-items: center; gap: 12px; }
+        .upgrade-icon { font-size: 1.5rem; }
+        .upgrade-title { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
+        .upgrade-desc { font-size: 0.78rem; color: #94a3b8; }
+        .upgrade-badge {
+            background: var(--blue);
+            color: #fff;
+            font-size: 0.72rem; font-weight: 700;
+            padding: 5px 12px; border-radius: 6px;
+            white-space: nowrap; flex-shrink: 0;
+        }
+
+        /* Affiliate banner after result */
+        .affiliate-wrap {
+            max-width: 640px; margin: 0 auto;
+            padding: 0 24px;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+
+        .affiliate-label {
+            font-size: 0.68rem; font-weight: 600;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            color: var(--text-3); margin-bottom: 2px;
+        }
+
+        .aff-card {
+            display: flex; align-items: center; gap: 12px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            text-decoration: none; color: var(--text);
+            transition: border-color 0.15s, box-shadow 0.15s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        .aff-card:hover { border-color: var(--blue); box-shadow: 0 4px 12px rgba(26,110,245,0.1); }
+        .aff-icon { font-size: 1.3rem; flex-shrink: 0; }
+        .aff-body { flex: 1; }
+        .aff-title { font-size: 0.88rem; font-weight: 600; margin-bottom: 1px; }
+        .aff-desc { font-size: 0.76rem; color: var(--text-2); line-height: 1.4; }
+        .aff-cta {
+            font-size: 0.72rem; font-weight: 700;
+            color: var(--blue);
+            background: var(--blue-light);
+            padding: 5px 12px; border-radius: 6px;
+            white-space: nowrap; flex-shrink: 0;
+        }
+
+        /* Email capture */
+        .email-wrap {
+            max-width: 640px; margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .email-card {
+            background: var(--blue-light);
+            border: 1px solid var(--blue-mid);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .email-card h3 {
+            font-size: 1rem; font-weight: 700;
+            color: var(--text); margin-bottom: 6px;
+        }
+
+        .email-card p {
+            font-size: 0.82rem; color: var(--text-2);
+            margin-bottom: 14px; line-height: 1.5;
+        }
+
+        .email-row {
+            display: flex; gap: 8px; max-width: 400px; margin: 0 auto;
+        }
+
+        .email-input {
+            flex: 1;
+            border: 1px solid var(--border-dark);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-family: var(--font); font-size: 0.875rem;
+            background: var(--white); color: var(--text);
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .email-input:focus { border-color: var(--blue); }
+        .email-input::placeholder { color: var(--text-3); }
+
+        .email-btn {
+            background: var(--blue);
+            border: none; border-radius: 8px;
+            color: #fff; font-family: var(--font);
+            font-size: 0.875rem; font-weight: 600;
+            padding: 10px 18px; cursor: pointer;
+            transition: background 0.15s; white-space: nowrap;
+        }
+
+        .email-btn:hover { background: var(--blue-dark); }
+        .email-success { font-size: 0.85rem; color: var(--green); font-weight: 600; margin-top: 8px; }
+
+        /* Support / BMC */
+        .support-wrap {
+            max-width: 640px; margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .support-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            display: flex; align-items: center;
+            justify-content: space-between; gap: 16px;
+            flex-wrap: wrap;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        .support-text { flex: 1; min-width: 180px; }
+        .support-text strong { font-size: 0.9rem; display: block; margin-bottom: 3px; }
+        .support-text span { font-size: 0.78rem; color: var(--text-2); }
+
+        .support-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .bmc-btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            background: #FFDD00; border: none; border-radius: 8px;
+            color: #000; font-family: var(--font);
+            font-size: 0.82rem; font-weight: 700;
+            padding: 9px 16px; cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.15s, box-shadow 0.15s;
+            box-shadow: 0 2px 8px rgba(255,221,0,0.4);
+        }
+        .bmc-btn:hover { opacity: 0.9; box-shadow: 0 4px 14px rgba(255,221,0,0.5); }
+
+        .kofi-btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            background: #29abe0; border: none; border-radius: 8px;
+            color: #fff; font-family: var(--font);
+            font-size: 0.82rem; font-weight: 700;
+            padding: 9px 16px; cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.15s;
+        }
+        .kofi-btn:hover { opacity: 0.9; }
+
+        /* Section spacer */
+        .mono-section {
+            display: flex; flex-direction: column; gap: 12px;
+            padding: 20px 0;
+            border-top: 1px solid var(--border);
+            background: var(--bg);
+        }
     </style>
 </head>
 <body>
@@ -710,6 +891,85 @@
 
 <!-- RELATED -->
 <div class="related-section">
+
+    <!-- MONETIZATION SECTION — shown after result -->
+    <div id="mono-section" class="mono-section hidden">
+
+        <!-- Upgrade CTA -->
+        <div class="upgrade-wrap">
+            <a href="https://dawg.city/upgrade" class="upgrade-btn">
+                <div class="upgrade-left">
+                    <span class="upgrade-icon">⚡</span>
+                    <div>
+                        <div class="upgrade-title">Upgrade for Full Video Analysis</div>
+                        <div class="upgrade-desc">Batch scanning · Full video upload · API access · No limits</div>
+                    </div>
+                </div>
+                <span class="upgrade-badge">Coming Soon</span>
+            </a>
+        </div>
+
+        <!-- Affiliate cards -->
+        <div class="affiliate-wrap">
+            <div class="affiliate-label">Want deeper analysis? Try these tools →</div>
+            <a href="https://vidiq.com/?ref=dawgcity" target="_blank" rel="noopener" class="aff-card">
+                <span class="aff-icon">📊</span>
+                <div class="aff-body">
+                    <div class="aff-title">VidIQ — YouTube Analytics</div>
+                    <div class="aff-desc">Track AI-generated trends, competitor channels & video performance.</div>
+                </div>
+                <span class="aff-cta">Free Trial →</span>
+            </a>
+            <a href="https://www.privateinternetaccess.com/pages/buy-vpn/dawgcity" target="_blank" rel="noopener" class="aff-card">
+                <span class="aff-icon">🔒</span>
+                <div class="aff-body">
+                    <div class="aff-title">Private Internet Access VPN</div>
+                    <div class="aff-desc">Browse privately when researching deepfake content. Trusted by millions.</div>
+                </div>
+                <span class="aff-cta">Get 83% Off →</span>
+            </a>
+            <a href="https://scanner.deepware.ai" target="_blank" rel="noopener" class="aff-card">
+                <span class="aff-icon">🛡️</span>
+                <div class="aff-body">
+                    <div class="aff-title">Deepware — Full Video Scanner</div>
+                    <div class="aff-desc">Need full video deepfake detection? Upload directly to Deepware.</div>
+                </div>
+                <span class="aff-cta">Try Free →</span>
+            </a>
+        </div>
+
+        <!-- Email capture -->
+        <div class="email-wrap">
+            <div class="email-card">
+                <h3>📬 Get Weekly AI Detection News</h3>
+                <p>Stay ahead of deepfakes & AI-generated content. No spam, unsubscribe anytime.</p>
+                <div class="email-row">
+                    <input type="email" id="email-input" class="email-input" placeholder="your@email.com">
+                    <button class="email-btn" onclick="submitEmail()">Subscribe</button>
+                </div>
+                <div id="email-success" class="email-success hidden">✅ You're in! Check your inbox.</div>
+            </div>
+        </div>
+
+        <!-- Support buttons -->
+        <div class="support-wrap">
+            <div class="support-card">
+                <div class="support-text">
+                    <strong>☕ Support Dawg City</strong>
+                    <span>This tool is free. If it helped you, consider buying us a coffee!</span>
+                </div>
+                <div class="support-btns">
+                    <a href="https://buymeacoffee.com/iladimm" target="_blank" rel="noopener" class="bmc-btn">
+                        ☕ Buy Me a Coffee
+                    </a>
+                    <a href="https://ko-fi.com/iladimm" target="_blank" rel="noopener" class="kofi-btn">
+                        ❤️ Ko-fi
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
     <div class="related-inner">
         <h2 class="section-title">Related Tools</h2>
         <div class="related-grid">
@@ -749,6 +1009,7 @@
         <a href="/privacy.html">Privacy Policy</a>
         <a href="/cookies.html">Cookie Policy</a>
         <a href="https://sightengine.com" target="_blank" rel="noopener">Powered by Sightengine</a>
+        <a href="https://buymeacoffee.com/iladimm" target="_blank" rel="noopener">☕ Support Us</a>
     </div>
     <div class="footer-copy">© 2026 dawg.city · Free AI-generated video detector</div>
 </footer>
@@ -891,16 +1152,15 @@
 
             resultDetails.textContent = data.details;
 
-            // Show & animate
+            // Show result + monetization
             resultCard.classList.remove('hidden');
             setTimeout(() => {
                 resultCard.classList.add('visible');
-                // Animate ring
                 const offset = CIRC - (CIRC * data.confidence);
                 ringProgress.style.strokeDashoffset = offset;
-                // Animate bars
                 primaryBar.style.width = `${pct}%`;
                 secondaryBar.style.width = `${inv}%`;
+                document.getElementById('mono-section').classList.remove('hidden');
                 resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 60);
 
@@ -913,6 +1173,21 @@
 
     btn.addEventListener('click', analyze);
     input.addEventListener('keypress', e => { if (e.key === 'Enter') analyze(); });
+
+    function submitEmail() {
+        const email = document.getElementById('email-input').value.trim();
+        if (!email || !email.includes('@')) return;
+        // Placeholder — wire to Mailchimp/ConvertKit later
+        document.getElementById('email-success').classList.remove('hidden');
+        document.getElementById('email-input').disabled = true;
+        document.querySelector('.email-btn').disabled = true;
+    }
+
+    // Hide mono-section on new scan
+    const origAnalyze = analyze;
+    input.addEventListener('input', () => {
+        document.getElementById('mono-section').classList.add('hidden');
+    });
 </script>
 </body>
 </html>
