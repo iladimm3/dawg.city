@@ -1712,20 +1712,23 @@
 
     // ── Supabase Auth ──
     const SUPABASE_URL = 'https://uywuhvqsgzxltkvksvjv.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_WYzparT9pkWmX2gJja-z2A_4zLpFShi';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5d3VodnFzZ3p4bHRrdmtzdmp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDE0NDMsImV4cCI6MjA4OTc3NzQ0M30.VA_6lwzbU1IHuPpMgIpy7lcA0XiN0Op5PB4Tl3K3JLk';
+
+    let supabase;
+    try {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } catch(e) {
+        console.error('Supabase init failed:', e);
+    }
 
     let currentUser = null;
     let scanCount = 0;
 
     // Init auth state on load
     async function initAuth() {
+        if (!supabase) return;
         const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-            await onSignedIn(session.user);
-        }
-
-        // Listen for auth changes (OAuth redirects back here)
+        if (session?.user) await onSignedIn(session.user);
         supabase.auth.onAuthStateChange(async (event, session) => {
             if (event === 'SIGNED_IN' && session?.user) {
                 await onSignedIn(session.user);
@@ -1785,6 +1788,11 @@
     }
 
     async function signInWithGoogle() {
+        if (!supabase) {
+            document.getElementById('signin-error').textContent = 'Auth not available. Please try again.';
+            document.getElementById('signin-error').classList.remove('hidden');
+            return;
+        }
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
@@ -1798,9 +1806,13 @@
     }
 
     async function signOut() {
+        if (!supabase) return;
         await supabase.auth.signOut();
         onSignedOut();
     }
+
+    async function incrementScanCount() {
+        if (!currentUser || !supabase) return;
 
     function openSignIn(e) {
         e.preventDefault();
