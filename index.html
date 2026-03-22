@@ -1733,27 +1733,25 @@
     async function initAuth() {
         if (!_sb) return;
 
-        // First check if we have an existing session
-        const { data: { session } } = await _sb.auth.getSession();
-        if (session?.user) {
-            await onSignedIn(session.user);
-            return;
-        }
-
-        // Listen for auth state changes — fires when OAuth redirect completes
+        // Register listener FIRST before getSession so we catch the PKCE callback
         _sb.auth.onAuthStateChange(async (event, session) => {
+            console.log('Auth event:', event, session?.user?.email || '');
             if (event === 'SIGNED_IN' && session?.user) {
                 await onSignedIn(session.user);
                 document.getElementById('signin-overlay').classList.remove('open');
                 document.body.style.overflow = '';
-                // Clean URL hash
-                if (window.location.hash) {
+                if (window.location.hash || window.location.search.includes('code=')) {
                     window.history.replaceState({}, document.title, window.location.pathname);
                 }
             } else if (event === 'SIGNED_OUT') {
                 onSignedOut();
             }
         });
+
+        // Then check for existing session
+        const { data: { session }, error } = await _sb.auth.getSession();
+        if (error) console.error('Session error:', error);
+        if (session?.user) await onSignedIn(session.user);
     }
 
     function submitEmail() {
@@ -1793,7 +1791,7 @@
     }
 
     async function loadScanCount(userId) {
-        const { data, error } = await supabase
+        const { data, error } = await _sb
             .from('profiles')
             .select('scan_count')
             .eq('id', userId)
@@ -1812,7 +1810,7 @@
         if (!currentUser) return;
         scanCount++;
         document.getElementById('nav-scan-num').textContent = scanCount;
-        await supabase
+        await _sb
             .from('profiles')
             .upsert({ id: currentUser.id, scan_count: scanCount });
     }
@@ -1823,15 +1821,18 @@
             document.getElementById('signin-error').classList.remove('hidden');
             return;
         }
-        const { error } = await _sb.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: 'https://dawg.city',
-                flowType: 'implicit'
-            }
-        });
-        if (error) {
-            document.getElementById('signin-error').textContent = error.message;
+        try {
+            const { error } = await _sb.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: 'https://dawg.city',
+                    flowType: 'pkce'
+                }
+            });
+            if (error) throw error;
+        } catch (err) {
+            console.error('Google sign-in error:', err);
+            document.getElementById('signin-error').textContent = err.message;
             document.getElementById('signin-error').classList.remove('hidden');
         }
     }
