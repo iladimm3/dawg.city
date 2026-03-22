@@ -800,7 +800,163 @@
             border-top: 1px solid var(--border);
             background: var(--bg);
         }
-    </style>
+
+        /* ── UPGRADE MODAL ── */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 1000;
+            background: rgba(15,20,30,0.6);
+            backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+        .modal {
+            background: var(--white);
+            border-radius: 20px;
+            width: 100%; max-width: 680px;
+            max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+            transform: translateY(20px) scale(0.97);
+            transition: transform 0.25s ease;
+            position: relative;
+        }
+
+        .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+
+        .modal-close {
+            position: absolute; top: 16px; right: 16px;
+            width: 32px; height: 32px;
+            background: var(--bg); border: none; border-radius: 50%;
+            font-size: 1rem; cursor: pointer; color: var(--text-2);
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s;
+        }
+        .modal-close:hover { background: var(--border); }
+
+        .modal-header {
+            padding: 32px 32px 24px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-tag {
+            display: inline-block;
+            font-size: 0.7rem; font-weight: 700;
+            letter-spacing: 0.14em; text-transform: uppercase;
+            color: var(--blue); background: var(--blue-light);
+            padding: 4px 12px; border-radius: 100px; margin-bottom: 12px;
+        }
+
+        .modal-header h2 {
+            font-size: 1.6rem; font-weight: 800;
+            letter-spacing: -0.02em; margin-bottom: 8px;
+        }
+
+        .modal-header p { font-size: 0.9rem; color: var(--text-2); }
+
+        /* Plans grid */
+        .plans-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            padding: 24px 32px 32px;
+        }
+
+        @media (max-width: 520px) { .plans-grid { grid-template-columns: 1fr; } }
+
+        .plan-card {
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 24px 20px;
+            position: relative;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .plan-card:hover { border-color: var(--blue); box-shadow: 0 4px 20px rgba(26,110,245,0.1); }
+
+        .plan-card.popular {
+            border-color: var(--blue);
+            box-shadow: 0 4px 20px rgba(26,110,245,0.12);
+        }
+
+        .popular-badge {
+            position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+            background: var(--blue); color: #fff;
+            font-size: 0.68rem; font-weight: 700;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            padding: 4px 14px; border-radius: 100px;
+            white-space: nowrap;
+        }
+
+        .plan-name {
+            font-size: 0.8rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--text-2); margin-bottom: 10px;
+        }
+
+        .plan-price {
+            display: flex; align-items: baseline; gap: 4px;
+            margin-bottom: 4px;
+        }
+
+        .plan-amount {
+            font-size: 2.4rem; font-weight: 800;
+            letter-spacing: -0.03em; color: var(--text);
+        }
+
+        .plan-period { font-size: 0.85rem; color: var(--text-3); }
+
+        .plan-desc {
+            font-size: 0.8rem; color: var(--text-2);
+            margin-bottom: 20px; line-height: 1.5;
+        }
+
+        .plan-features {
+            list-style: none; margin-bottom: 24px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+
+        .plan-features li {
+            display: flex; align-items: flex-start; gap: 8px;
+            font-size: 0.83rem; color: var(--text-2); line-height: 1.4;
+        }
+
+        .feat-check { color: var(--green); font-size: 0.9rem; flex-shrink: 0; margin-top: 1px; }
+        .feat-x { color: var(--text-3); font-size: 0.9rem; flex-shrink: 0; margin-top: 1px; }
+
+        .plan-btn {
+            display: block; width: 100%;
+            padding: 12px; border-radius: 10px;
+            font-family: var(--font); font-size: 0.9rem; font-weight: 700;
+            cursor: pointer; text-align: center; text-decoration: none;
+            transition: opacity 0.15s, box-shadow 0.15s;
+            border: none;
+        }
+
+        .plan-btn.primary {
+            background: var(--blue); color: #fff;
+            box-shadow: 0 4px 14px rgba(26,110,245,0.3);
+        }
+        .plan-btn.primary:hover { opacity: 0.9; box-shadow: 0 6px 20px rgba(26,110,245,0.4); }
+
+        .plan-btn.secondary {
+            background: var(--bg); color: var(--text-2);
+            border: 1.5px solid var(--border-dark);
+        }
+        .plan-btn.secondary:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+
+        .modal-footer {
+            padding: 16px 32px 24px;
+            text-align: center;
+            font-size: 0.78rem; color: var(--text-3);
+            border-top: 1px solid var(--border);
+        }
+
+        .modal-footer a { color: var(--blue); text-decoration: none; }
 </head>
 <body>
 
@@ -827,15 +983,6 @@
                 <span id="btn-text">Scan</span>
                 <div id="btn-spinner" class="spinner hidden"></div>
             </button>
-        </div>
-
-        <div class="or-divider">or</div>
-
-        <div style="text-align:center;">
-            <a href="https://scanner.deepware.ai" target="_blank" rel="noopener" class="upload-btn">
-                📁 Upload a Video File
-            </a>
-            <p style="font-size:0.72rem;color:var(--text-3);margin-top:8px;">Video upload powered by Deepware — opens in new tab</p>
         </div>
 
         <label class="tos-row">
@@ -950,7 +1097,7 @@
 
         <!-- Upgrade CTA -->
         <div class="upgrade-wrap">
-            <a href="https://dawg.city/upgrade" class="upgrade-btn">
+            <button onclick="openUpgradeModal()" class="upgrade-btn">
                 <div class="upgrade-left">
                     <span class="upgrade-icon">⚡</span>
                     <div>
@@ -958,8 +1105,8 @@
                         <div class="upgrade-desc">Batch scanning · Full video upload · API access · No limits</div>
                     </div>
                 </div>
-                <span class="upgrade-badge">Coming Soon</span>
-            </a>
+                <span class="upgrade-badge">View Plans →</span>
+            </button>
         </div>
 
         <!-- Affiliate cards -->
@@ -1073,6 +1220,70 @@
     </div>
     <div class="footer-copy">© 2026 dawg.city · Free AI-generated video detector</div>
 </footer>
+
+<!-- UPGRADE MODAL -->
+<div id="upgrade-modal" class="modal-overlay" onclick="handleModalClick(event)">
+    <div class="modal">
+        <button class="modal-close" onclick="closeUpgradeModal()">✕</button>
+
+        <div class="modal-header">
+            <div class="modal-tag">⚡ Upgrade Dawg City</div>
+            <h2>Full Video Detection</h2>
+            <p>Go beyond thumbnails. Scan full videos, upload files, and get deeper AI analysis.</p>
+        </div>
+
+        <div class="plans-grid">
+            <!-- Starter -->
+            <div class="plan-card">
+                <div class="plan-name">Starter</div>
+                <div class="plan-price">
+                    <span class="plan-amount">$9</span>
+                    <span class="plan-period">/month</span>
+                </div>
+                <p class="plan-desc">Perfect for creators & journalists who need regular AI detection.</p>
+                <ul class="plan-features">
+                    <li><span class="feat-check">✓</span> 50 video scans/month</li>
+                    <li><span class="feat-check">✓</span> Full video upload (up to 100MB)</li>
+                    <li><span class="feat-check">✓</span> Detailed confidence report</li>
+                    <li><span class="feat-check">✓</span> No ads</li>
+                    <li><span class="feat-x">✗</span> Batch scanning</li>
+                    <li><span class="feat-x">✗</span> API access</li>
+                </ul>
+                <!-- PASTE YOUR STRIPE STARTER PAYMENT LINK BELOW -->
+                <a href="https://buy.stripe.com/REPLACE_WITH_STARTER_LINK" target="_blank" rel="noopener" class="plan-btn secondary">
+                    Get Starter →
+                </a>
+            </div>
+
+            <!-- Pro -->
+            <div class="plan-card popular">
+                <div class="popular-badge">Most Popular</div>
+                <div class="plan-name">Pro</div>
+                <div class="plan-price">
+                    <span class="plan-amount">$19</span>
+                    <span class="plan-period">/month</span>
+                </div>
+                <p class="plan-desc">For power users, researchers, and teams who need maximum coverage.</p>
+                <ul class="plan-features">
+                    <li><span class="feat-check">✓</span> Unlimited video scans</li>
+                    <li><span class="feat-check">✓</span> Full video upload (up to 500MB)</li>
+                    <li><span class="feat-check">✓</span> Detailed confidence report</li>
+                    <li><span class="feat-check">✓</span> No ads</li>
+                    <li><span class="feat-check">✓</span> Batch scanning (10 at once)</li>
+                    <li><span class="feat-check">✓</span> API access</li>
+                </ul>
+                <!-- PASTE YOUR STRIPE PRO PAYMENT LINK BELOW -->
+                <a href="https://buy.stripe.com/REPLACE_WITH_PRO_LINK" target="_blank" rel="noopener" class="plan-btn primary">
+                    Get Pro →
+                </a>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            🔒 Secure payment via Stripe · Cancel anytime · <a href="/privacy.html">Privacy Policy</a>
+        </div>
+    </div>
+</div>
 
 <!-- COOKIE BANNER -->
 <div id="cookie-banner">
@@ -1243,17 +1454,32 @@
     }
 
     function scanAnother() {
-        // Reset everything
         input.value = '';
         errorBanner.classList.add('hidden');
         resultCard.classList.add('hidden');
         resultCard.classList.remove('visible');
         document.getElementById('mono-section').classList.add('hidden');
         document.querySelectorAll('.strip-pill').forEach(p => p.style.background = '');
-        // Scroll back to input
         input.scrollIntoView({ behavior: 'smooth', block: 'center' });
         setTimeout(() => input.focus(), 400);
     }
+
+    function openUpgradeModal() {
+        document.getElementById('upgrade-modal').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeUpgradeModal() {
+        document.getElementById('upgrade-modal').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    function handleModalClick(e) {
+        if (e.target === document.getElementById('upgrade-modal')) closeUpgradeModal();
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeUpgradeModal(); });
 
     // Hide mono-section on new scan
     const origAnalyze = analyze;
