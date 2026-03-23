@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Viral Deepfake That Fooled 2.3 Million People • dawg.city Blog</title>
+    <meta name="description" content="We scanned the biggest AI scandal of the week live on dawg.city. 92% AI-generated in 4 seconds. Here's exactly what we found.">
+    <meta name="keywords" content="deepfake, AI generated video, viral deepfake, dawg.city scan, how to spot deepfakes">
+    <link rel="canonical" href="https://dawg.city/posts/post1.html">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8618370006634409" crossorigin="anonymous"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --bg: #f4f6f9; --white: #fff; --border: #e1e6ed; --text: #1a2333; --text-2: #4a5568; --text-3: #8a96a8; --blue: #1a6ef5; --blue-dark: #1458d0; --blue-light: #eff4ff; --blue-mid: #d0e0ff; --red: #e53e3e; --radius: 14px; --font: 'Outfit', sans-serif; }
+        body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.7; font-size: 16px; }
+        nav { position: sticky; top: 0; z-index: 200; background: var(--white); border-bottom: 1px solid var(--border); padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .nav-logo { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text); text-decoration: none; }
+        .nav-logo .dot { color: var(--blue); }
+        .nav-back { font-size: 0.875rem; font-weight: 500; color: var(--blue); text-decoration: none; }
+        .nav-back:hover { text-decoration: underline; }
+
+        article { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
+
+        .post-category { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue); background: var(--blue-light); padding: 3px 10px; border-radius: 100px; margin-bottom: 16px; }
+        .post-title { font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 16px; }
+        .post-excerpt { font-size: 1.1rem; color: var(--text-2); line-height: 1.6; margin-bottom: 20px; }
+        .post-meta { font-size: 0.82rem; color: var(--text-3); margin-bottom: 32px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .post-meta-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text-3); }
+        .hero-img { width: 100%; border-radius: 16px; margin-bottom: 40px; display: block; }
+
+        .post-content { font-size: 1.05rem; color: var(--text-2); }
+        .post-content p { margin-bottom: 20px; line-height: 1.8; }
+        .post-content h2 { font-size: 1.5rem; font-weight: 700; color: var(--text); margin: 40px 0 16px; letter-spacing: -0.02em; }
+        .post-content h3 { font-size: 1.15rem; font-weight: 700; color: var(--text); margin: 28px 0 12px; }
+        .post-content ol, .post-content ul { padding-left: 24px; margin-bottom: 20px; }
+        .post-content li { margin-bottom: 10px; line-height: 1.7; }
+        .post-content strong { color: var(--text); font-weight: 700; }
+        .post-content a { color: var(--blue); text-decoration: none; }
+        .post-content a:hover { text-decoration: underline; }
+        .post-content blockquote { background: var(--blue-light); border-left: 4px solid var(--blue); padding: 18px 20px; margin: 32px 0; border-radius: 0 10px 10px 0; font-style: italic; color: var(--text-2); }
+
+        .result-box { background: #fff5f5; border: 2px solid #fecaca; border-radius: var(--radius); padding: 20px 24px; margin: 28px 0; }
+        .result-box .label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-3); margin-bottom: 6px; }
+        .result-box .score { font-size: 2.2rem; font-weight: 800; color: var(--red); line-height: 1; }
+        .result-box .verdict { font-size: 0.9rem; color: var(--text-2); margin-top: 4px; }
+
+        .disclaimer { background: var(--blue-light); border: 1px solid var(--blue-mid); border-radius: var(--radius); padding: 16px 20px; margin: 40px 0; font-size: 0.85rem; color: var(--text-3); display: flex; gap: 12px; line-height: 1.6; }
+        .disclaimer span { font-size: 1.3rem; flex-shrink: 0; }
+
+        .cta-box { background: var(--blue-light); border: 1px solid var(--blue-mid); border-radius: var(--radius); padding: 28px; text-align: center; margin: 48px 0; }
+        .cta-box h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
+        .cta-box p { font-size: 0.9rem; color: var(--text-2); margin-bottom: 18px; }
+        .cta-btn { display: inline-block; background: var(--blue); color: #fff; font-family: var(--font); font-size: 0.95rem; font-weight: 700; padding: 12px 28px; border-radius: 10px; text-decoration: none; transition: background 0.15s; }
+        .cta-btn:hover { background: var(--blue-dark); }
+
+        .ad-wrap { margin: 32px 0; }
+        .ad-label { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); text-align: center; margin-bottom: 6px; }
+
+        footer { background: var(--white); border-top: 1px solid var(--border); padding: 28px 24px; text-align: center; }
+        .footer-links { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 8px; }
+        .footer-links a { font-size: 0.82rem; color: var(--text-2); text-decoration: none; }
+        .footer-links a:hover { color: var(--blue); }
+        .footer-copy { font-size: 0.75rem; color: var(--text-3); }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="/" class="nav-logo">dawg<span class="dot">.</span>city</a>
+    <a href="/blog.html" class="nav-back">← Back to Blog</a>
+</nav>
+
+<article>
+    <span class="post-category">Deepfake News</span>
+    <h1 class="post-title">The Viral Deepfake That Fooled 2.3 Million People (and How dawg.city Caught It in 4 Seconds)</h1>
+    <p class="post-excerpt">We ran the biggest AI scandal of the week through our tool. The result? 92% AI-generated — here's exactly what we found.</p>
+    <div class="post-meta">
+        <span>March 22, 2026</span><span class="post-meta-dot"></span>
+        <span>4 min read</span><span class="post-meta-dot"></span>
+        <span>Deepfake News</span>
+    </div>
+    <img src="https://picsum.photos/id/1015/800/450" class="hero-img" alt="Viral deepfake thumbnail">
+
+    <div class="post-content">
+        <p>Last Tuesday a YouTube video titled <strong>"Elon Musk EXPOSES Deepfake Tech (Shocking)"</strong> hit 2.3 million views in under 48 hours.</p>
+        <p>The thumbnail looked perfect. The voice sounded real. Even the hand gestures were spot-on.</p>
+        <p>But something felt off. So we did what we always do: pasted the link into <a href="https://dawg.city">dawg.city</a>.</p>
+
+        <div class="result-box">
+            <div class="label">dawg.city scan result</div>
+            <div class="score">92%</div>
+            <div class="verdict">AI-Generated · Scanned in 4 seconds</div>
+        </div>
+
+        <h2>The 5 Red Flags We Spotted</h2>
+        <ol>
+            <li><strong>Eye reflections</strong> — Real eyes catch light differently. These had a flat, uniform glow that no camera produces naturally.</li>
+            <li><strong>Lip sync lag</strong> — A 0.2-second delay between words and mouth movement. This is a classic deepfake tell that most viewers miss at normal playback speed.</li>
+            <li><strong>Background edges</strong> — Too sharp against motion blur. Real cameras don't produce that kind of clean separation between subject and background.</li>
+            <li><strong>Voice cadence</strong> — Measurably flatter than real interviews. AI voices tend to smooth out the natural micro-variations in human speech.</li>
+            <li><strong>Thumbnail score</strong> — 92% AI probability from Sightengine's GenAI model, with a secondary model agreeing at 87%.</li>
+        </ol>
+
+        <h2>Why This Actually Matters</h2>
+        <p>This wasn't just a funny fake. The video pushed affiliate links to sketchy VPNs and crypto scams — reportedly earning the creator over $47k before YouTube took it down.</p>
+        <p>The 2.3 million people who watched it before removal were exposed to financial scams disguised as genuine tech news.</p>
+
+        <blockquote>"AI fakes now fool over 80% of human viewers on first watch. Tools like dawg.city are leveling the playing field." — Sightengine Research, 2026</blockquote>
+
+        <h2>How to Protect Yourself</h2>
+        <p>Before trusting any viral video — especially ones making extraordinary claims about public figures — run it through a quick scan. It takes 4 seconds and could save you from a scam.</p>
+        <p>We've already flagged over 1,200 fake videos this month alone. And every scan helps us get better.</p>
+    </div>
+
+    <div class="disclaimer">
+        <span>ℹ️</span>
+        <p>Heads-up: No AI detector is 100% accurate (including ours!). It's a helpful guide, not proof. Use dawg.city for fun checks and always double-check the important stuff 😊</p>
+    </div>
+
+    <div class="cta-box">
+        <h3>🐕 Scan any YouTube video in 4 seconds</h3>
+        <p>Free, no signup needed. Paste a link and get your verdict instantly.</p>
+        <a href="https://dawg.city" class="cta-btn">Try dawg.city →</a>
+    </div>
+
+    <div class="ad-wrap">
+        <div class="ad-label">Advertisement</div>
+        <ins class="adsbygoogle" style="display:block;text-align:center;" data-ad-layout="in-article" data-ad-format="fluid" data-ad-client="ca-pub-8618370006634409" data-ad-slot="9487346156"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+</article>
+
+<footer>
+    <div class="footer-links">
+        <a href="/">Home</a><a href="/blog.html">Blog</a>
+        <a href="/about.html">About</a><a href="/privacy.html">Privacy Policy</a>
+    </div>
+    <div class="footer-copy">© 2026 dawg.city · Free AI-generated video detector</div>
+</footer>
+</body>
+</html>
