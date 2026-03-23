@@ -106,7 +106,4 @@ Made with ❤️ in Morocco for the global AI safety community
 
 ## 📄 **License**
 
-MIT - Free to fork, deploy, extend!
-```
-
-**Copy this directly** into your GitHub README.md. It showcases your production-ready MVP while inviting other devs to deploy their own instances. The badges, table, and revenue proof make it credible and attractive for stars/forks. Ready for Product Hunt! 🚀
+MIT
