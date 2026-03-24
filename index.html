@@ -294,26 +294,6 @@
 
         .disclaimer-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
 
-        /* ── KNOWN AI TOOL BANNER ── */
-        .ai-tool-banner {
-            display: none;
-            max-width: 640px;
-            margin: 0 auto 0;
-            padding: 0 24px 12px;
-        }
-
-        .ai-tool-banner-inner {
-            background: #fff7ed;
-            border: 1px solid #fed7aa;
-            border-radius: 10px;
-            padding: 12px 16px;
-            display: flex; align-items: flex-start; gap: 10px;
-            font-size: 0.82rem; color: #7c2d12; line-height: 1.5;
-        }
-
-        .ai-tool-banner-inner strong { color: #9a3412; }
-        .ai-tool-banner-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
-
         /* ── FAQ ── */
         .faq-section {
             background: var(--white);
@@ -1331,7 +1311,7 @@
             <input
                 type="url"
                 id="url-input"
-                placeholder="Paste a video link for AI-Generated detection"
+                placeholder="Paste a YouTube, TikTok, X or Instagram link..."
                 autocomplete="off"
                 spellcheck="false"
                 inputmode="url"
@@ -1441,18 +1421,6 @@
                 📋 Copy result
             </button>
         </div>
-    </div>
-</div>
-
-<!-- KNOWN AI TOOL BANNER — shown when metadata keyword hit -->
-<div id="ai-tool-banner" class="ai-tool-banner">
-    <div class="ai-tool-banner-inner">
-        <span class="ai-tool-banner-icon">⚠️</span>
-        <p>
-            <strong>Known AI video tool detected in metadata:</strong>
-            <span id="ai-tool-name"></span> — this video was likely created with an AI generator.
-            Our image-based detector may underestimate AI probability for the latest generation models.
-        </p>
     </div>
 </div>
 
@@ -1867,16 +1835,6 @@
 
             resultDetails.textContent = data.details;
 
-            // Keyword / known AI tool banner
-            const aiToolBanner = document.getElementById('ai-tool-banner');
-            const aiToolName = document.getElementById('ai-tool-name');
-            if (data.keyword_hit && data.keyword_tool) {
-                aiToolName.textContent = data.keyword_tool;
-                aiToolBanner.style.display = 'block';
-            } else {
-                aiToolBanner.style.display = 'none';
-            }
-
             // Show result + monetization
             resultCard.classList.remove('hidden');
             setTimeout(() => {
@@ -1909,7 +1867,6 @@
         resultCard.classList.add('hidden');
         resultCard.classList.remove('visible');
         document.getElementById('mono-section').classList.add('hidden');
-        document.getElementById('ai-tool-banner').style.display = 'none';
         document.querySelectorAll('.strip-pill').forEach(p => p.style.background = '');
         input.scrollIntoView({ behavior: 'smooth', block: 'center' });
         setTimeout(() => input.focus(), 400);
