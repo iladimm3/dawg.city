@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dawg City — AI & Deepfake Video Detector</title>
-    <meta name="description" content="Detect AI-generated and deepfake YouTube videos instantly. Free tool. Paste a link and get a confidence score in seconds.">
+    <meta name="description" content="Detect AI-generated and deepfake videos instantly. Supports YouTube, TikTok, X (Twitter) and Instagram. Free tool. Paste a link and get a confidence score in seconds.">
     <meta name="keywords" content="AI generated video detector, deepfake detector, YouTube AI detection, fake video checker">
     <meta name="author" content="dawg.city">
     <link rel="canonical" href="https://dawg.city/">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://dawg.city/">
     <meta property="og:title" content="Dawg City — AI & Deepfake Video Detector">
-    <meta property="og:description" content="Detect AI-generated and deepfake YouTube videos instantly. Free. No signup.">
+    <meta property="og:description" content="Detect AI-generated and deepfake videos instantly. Supports YouTube, TikTok, X (Twitter) and Instagram. Free. No signup.">
     <meta property="og:image" content="https://dawg.city/og-image.png">
     <meta name="twitter:card" content="summary_large_image">
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Dawg City","url":"https://dawg.city","description":"Free AI-generated and deepfake video detector for YouTube.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Dawg City","url":"https://dawg.city","description":"Free AI-generated and deepfake video detector. Supports YouTube, TikTok, X (Twitter) and Instagram.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1311,7 +1311,7 @@
             <input
                 type="url"
                 id="url-input"
-                placeholder="Paste a YouTube, TikTok, X or Instagram link..."
+                placeholder="Paste a YouTube, TikTok or X link..."
                 autocomplete="off"
                 spellcheck="false"
                 inputmode="url"
@@ -1567,7 +1567,7 @@
                     <span class="faq-chevron">▼</span>
                 </button>
                 <div class="faq-a">
-                    dawg.city extracts the high-resolution thumbnail from any YouTube URL and runs it through <a href="https://sightengine.com" target="_blank" rel="noopener">Sightengine</a>'s GenAI detection model. The model returns a probability score indicating how likely the content is AI-generated or synthetic. We return a binary verdict — Fake or Real — based on a 50% confidence threshold.
+                    dawg.city extracts the high-resolution thumbnail from a YouTube, TikTok, X (Twitter), or Instagram URL and runs it through <a href="https://sightengine.com" target="_blank" rel="noopener">Sightengine</a>'s GenAI detection model. The model returns a probability score indicating how likely the content is AI-generated or synthetic. We return a binary verdict — Fake or Real — based on a 50% confidence threshold.
                 </div>
             </div>
             <div class="faq-item">
@@ -1585,7 +1585,7 @@
                     <span class="faq-chevron">▼</span>
                 </button>
                 <div class="faq-a">
-                    Currently dawg.city supports YouTube videos, YouTube Shorts, and YouTube Live streams. Support for X (Twitter), TikTok, and direct video uploads is planned for future paid tiers.
+                    dawg.city supports YouTube videos, YouTube Shorts, YouTube Live streams, TikTok videos, and X (Twitter) posts. Instagram support is coming soon. Simply paste any public link from these platforms and hit Scan.
                 </div>
             </div>
             <div class="faq-item">
@@ -1594,7 +1594,7 @@
                     <span class="faq-chevron">▼</span>
                 </button>
                 <div class="faq-a">
-                    Yes — scanning YouTube URLs is completely free with no account required. Paid plans ($9/month Starter and $19/month Pro) unlock full video upload, batch scanning, and API access.
+                    Yes — scanning YouTube, TikTok, X (Twitter), and Instagram URLs is completely free with no account required. Paid plans ($9/month Starter and $19/month Pro) unlock full video upload, batch scanning, and API access.
                 </div>
             </div>
             <div class="faq-item">

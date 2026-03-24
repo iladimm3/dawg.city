@@ -141,61 +141,8 @@ async fn get_thumbnail(client: &reqwest::Client, platform: &Platform) -> Result<
             Err("Could not extract X/Twitter media. The post may be private or text-only.".to_string())
         }
 
-        Platform::Instagram(url) => {
-            // Try Facebook oEmbed API first if token is available
-            let ig_token = std::env::var("INSTAGRAM_TOKEN").unwrap_or_default();
-            if !ig_token.is_empty() {
-                let oembed_url = format!(
-                    "https://graph.facebook.com/v18.0/instagram_oembed?url={}&maxwidth=800&access_token={}",
-                    url_encode(url), ig_token
-                );
-                if let Ok(resp) = client
-                    .get(&oembed_url)
-                    .header("User-Agent", "Mozilla/5.0 (compatible; dawg.city/1.0)")
-                    .send()
-                    .await
-                {
-                    if let Ok(json) = resp.json::<serde_json::Value>().await {
-                        if let Some(thumb) = json["thumbnail_url"].as_str() {
-                            return Ok(thumb.to_string());
-                        }
-                    }
-                }
-            }
-
-            // Fallback: scrape og:image meta tag from the Instagram page
-            let html = client
-                .get(url.as_str())
-                .header("User-Agent", "Mozilla/5.0 (Linux; Android 9; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
-                .header("Accept-Language", "en-US,en;q=0.9")
-                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-                .send()
-                .await
-                .map_err(|e| format!("Instagram request failed: {}", e))?
-                .text()
-                .await
-                .map_err(|e| format!("Instagram read failed: {}", e))?;
-
-            // Extract og:image content from meta tag
-            let og_image = html
-                .find(r#"og:image""#)
-                .or_else(|| html.find(r#"og:image'"#))
-                .and_then(|pos| {
-                    let after = &html[pos..];
-                    // Look for content="..." or content='...'
-                    after.find(r#"content=""#)
-                        .map(|p| (p + 9, '"'))
-                        .or_else(|| after.find(r#"content='"#).map(|p| (p + 9, '\'')))
-                        .and_then(|(start, quote)| {
-                            let value_start = &after[start..];
-                            value_start.find(quote).map(|end| value_start[..end].to_string())
-                        })
-                });
-
-            match og_image {
-                Some(img_url) if !img_url.is_empty() => Ok(img_url),
-                _ => Err("Could not extract Instagram thumbnail. The post may be private, age-restricted, or Instagram is blocking the request.".to_string()),
-            }
+        Platform::Instagram(_url) => {
+            Err("Instagram scanning is coming soon. Due to platform restrictions, Instagram thumbnails can't be fetched automatically. Try a YouTube, TikTok, or X link instead!".to_string())
         }
     }
 }
