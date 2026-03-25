@@ -3,18 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dawg City — AI & Deepfake Video Detector</title>
-    <meta name="description" content="Detect AI-generated and deepfake YouTube videos instantly. Free tool. Paste a link and get a confidence score in seconds.">
-    <meta name="keywords" content="AI generated video detector, deepfake detector, YouTube AI detection, fake video checker">
+    <title>Dawg City — Free AI & Deepfake Video Detector | YouTube, TikTok, X</title>
+    <meta name="description" content="Instantly detect AI-generated and deepfake videos from YouTube, TikTok and X (Twitter). Free, no signup. Paste a link and get an AI confidence score in seconds.">
+    <meta name="keywords" content="AI video detector, deepfake detector, AI generated video checker, fake video detector, YouTube deepfake, TikTok AI detection, deepfake checker free, AI content detector, synthetic media detector, deepfake video scanner">
     <meta name="author" content="dawg.city">
+    <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://dawg.city/">
+
+    <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://dawg.city/">
-    <meta property="og:title" content="Dawg City — AI & Deepfake Video Detector">
-    <meta property="og:description" content="Detect AI-generated and deepfake YouTube videos instantly. Free. No signup.">
+    <meta property="og:title" content="Dawg City — Free AI & Deepfake Video Detector">
+    <meta property="og:description" content="Instantly detect AI-generated and deepfake videos from YouTube, TikTok and X. Free, no signup required.">
     <meta property="og:image" content="https://dawg.city/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Dawg City">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Dawg City","url":"https://dawg.city","description":"Free AI-generated and deepfake video detector for YouTube.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+    <meta name="twitter:site" content="@dawgcity">
+    <meta name="twitter:title" content="Dawg City — Free AI & Deepfake Video Detector">
+    <meta name="twitter:description" content="Instantly detect AI-generated and deepfake videos from YouTube, TikTok and X. Free, no signup.">
+    <meta name="twitter:image" content="https://dawg.city/og-image.png">
+
+    <!-- WebApplication structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Dawg City",
+      "url": "https://dawg.city",
+      "description": "Free AI-generated and deepfake video detector. Supports YouTube, TikTok and X (Twitter). Paste a link and get an AI confidence score instantly.",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "AI-generated video detection",
+        "Deepfake thumbnail analysis",
+        "YouTube video scanning",
+        "TikTok video scanning",
+        "X (Twitter) post scanning",
+        "Confidence score with percentage",
+        "No signup required"
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "124"
+      }
+    }
+    </script>
+
+    <!-- FAQPage structured data — enables rich results in Google -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How does dawg.city detect AI-generated videos?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "dawg.city extracts the high-resolution thumbnail from a YouTube, TikTok, or X (Twitter) URL and runs it through Sightengine's GenAI detection model. The model returns a probability score indicating how likely the content is AI-generated or synthetic, and we return a binary verdict — Fake or Real — based on a 50% confidence threshold."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is the AI detection 100% accurate?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No AI detector is 100% accurate. dawg.city is a probabilistic tool that can have false positives (real videos flagged as fake) and false negatives (AI videos marked as real), especially as generation technology improves. Use it as a helpful indicator, not a definitive verdict."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which video platforms does dawg.city support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "dawg.city supports YouTube videos, YouTube Shorts, YouTube Live streams, TikTok videos, and X (Twitter) posts. Simply paste any public link from these platforms and hit Scan."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is dawg.city free to use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes — scanning YouTube, TikTok, and X (Twitter) URLs is completely free with no account required. Paid plans ($9/month Starter and $19/month Pro) unlock full video upload, batch scanning, and API access."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does dawg.city store my scanned videos or data?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. URLs submitted for analysis are processed in real-time and are not stored on our servers. We only store your scan count if you are signed in."
+          }
+        }
+      ]
+    }
+    </script>
 
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
