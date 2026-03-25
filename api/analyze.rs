@@ -2,6 +2,7 @@ use vercel_runtime::{run, Body, Error, Request, Response, StatusCode};
 use serde_json::json;
 use once_cell::sync::Lazy;
 use regex::Regex;
+use std::time::Instant;
 
 // ── YouTube patterns ──
 static YT_PATTERNS: Lazy<Vec<Regex>> = Lazy::new(|| vec![
@@ -29,7 +30,6 @@ static IG_PATTERNS: Lazy<Vec<Regex>> = Lazy::new(|| vec![
     Regex::new(r"instagram\.com/(?:p|reel|tv)/([a-zA-Z0-9_-]+)").unwrap(),
 ]);
 
-const RECAPTCHA_SECRET: &str = "6LdrpZIsAAAAAK3PDZSvYxYhF09-oB28hhpalscV";
 const RECAPTCHA_MIN_SCORE: f64 = 0.5;
 
 #[derive(Debug)]
@@ -180,13 +180,23 @@ async fn main() -> Result<(), Error> {
 
 pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     if req.method() == "OPTIONS" {
+pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
+    if req.method() == "OPTIONS" {
         return Ok(Response::builder()
             .status(StatusCode::NO_CONTENT)
             .header("Access-Control-Allow-Origin", "https://dawg.city")
             .header("Access-Control-Allow-Methods", "POST, OPTIONS")
-            .header("Access-Control-Allow-Headers", "Content-Type")
+            .header("Access-Control-Allow-Headers", "Content-Type, Authorization")
             .body(Body::Empty)?);
     }
+
+    // ── Request tracing ──────────────────────────────────────────
+    let req_start = Instant::now();
+    let request_id = req.headers()
+        .get("x-vercel-id")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("unknown")
+        .to_string();
 
     let body = match req.body() {
         Body::Text(s) => s.clone(),
@@ -201,14 +211,29 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         _ => return error_response("Missing reCAPTCHA token"),
     };
 
+    // ── Read secrets from env (never hardcode) ────────────────────
+    let recaptcha_secret = match std::env::var("RECAPTCHA_SECRET") {
+        Ok(s) => s,
+        Err(_) => return error_response("Server misconfiguration: missing RECAPTCHA_SECRET"),
+    };
+    let supabase_url = match std::env::var("SUPABASE_URL") {
+        Ok(s) => s,
+        Err(_) => return error_response("Server misconfiguration: missing SUPABASE_URL"),
+    };
+    let supabase_service_key = match std::env::var("SUPABASE_SERVICE_ROLE_KEY") {
+        Ok(s) => s,
+        Err(_) => return error_response("Server misconfiguration: missing SUPABASE_SERVICE_ROLE_KEY"),
+    };
+
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
         .build()
         .unwrap_or_default();
 
+    // ── reCAPTCHA verification ────────────────────────────────────
     let recaptcha_resp = client
         .post("https://www.google.com/recaptcha/api/siteverify")
-        .form(&[("secret", RECAPTCHA_SECRET), ("response", &recaptcha_token)])
+        .form(&[("secret", recaptcha_secret.as_str()), ("response", recaptcha_token.as_str())])
         .send()
         .await?
         .json::<serde_json::Value>()
@@ -221,6 +246,82 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         return error_response("reCAPTCHA verification failed. Please try again.");
     }
 
+    // ── Authenticate caller via Supabase JWT ──────────────────────
+    // Frontend must send:  Authorization: Bearer <supabase-session-token>
+    let user_jwt = req.headers()
+        .get("authorization")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.strip_prefix("Bearer "))
+        .map(|s| s.to_string());
+
+    let user_jwt = match user_jwt {
+        Some(t) if !t.is_empty() => t,
+        _ => {
+            eprintln!("{}", json!({"event":"auth_missing","request_id":request_id,"ms":req_start.elapsed().as_millis() as u64}));
+            return error_response("Authentication required");
+        }
+    };
+
+    // Validate JWT with Supabase and retrieve the user record
+    let auth_result = client
+        .get(format!("{}/auth/v1/user", supabase_url))
+        .header("apikey", &supabase_service_key)
+        .header("Authorization", format!("Bearer {}", user_jwt))
+        .send()
+        .await;
+
+    let user_id = match auth_result {
+        Ok(r) if r.status().is_success() => {
+            let user: serde_json::Value = r.json().await.unwrap_or(json!({}));
+            match user["id"].as_str().map(|s| s.to_string()) {
+                Some(id) => id,
+                None => return error_response("Could not resolve user identity"),
+            }
+        }
+        Ok(r) if r.status().as_u16() == 401 => {
+            return error_response("Invalid or expired session. Please log in again.");
+        }
+        Ok(_) => return error_response("Authentication failed"),
+        Err(_) => return error_response("Authentication check failed. Please try again."),
+    };
+
+    // ── Atomic quota enforcement (server-authoritative) ───────────
+    // Calls a Supabase SQL function that does:
+    //   UPDATE profiles
+    //   SET scan_count_month = scan_count_month + 1
+    //   WHERE id = p_user_id AND scan_count_month < quota_limit
+    //   RETURNING scan_count_month;
+    // Returns NULL when quota is exhausted → no TOCTOU race possible.
+    let quota_resp = client
+        .post(format!("{}/rest/v1/rpc/increment_scan_quota", supabase_url))
+        .header("apikey", &supabase_service_key)
+        .header("Authorization", format!("Bearer {}", supabase_service_key))
+        .header("Content-Type", "application/json")
+        .json(&json!({ "p_user_id": user_id }))
+        .send()
+        .await;
+
+    match quota_resp {
+        Ok(r) if r.status().is_success() => {
+            let body = r.json::<serde_json::Value>().await.unwrap_or(serde_json::Value::Null);
+            if body.is_null() {
+                eprintln!("{}", json!({"event":"quota_exceeded","request_id":request_id,"user_id":user_id,"ms":req_start.elapsed().as_millis() as u64}));
+                return error_response(
+                    "Scan quota exceeded for this billing period. Please upgrade your plan."
+                );
+            }
+        }
+        Ok(r) => {
+            eprintln!("[analyze] quota RPC failed: status={}", r.status());
+            return error_response("Could not verify scan quota. Please try again.");
+        }
+        Err(e) => {
+            eprintln!("[analyze] quota RPC error: {}", e);
+            return error_response("Could not verify scan quota. Please try again.");
+        }
+    }
+
+    // ── Extract + validate URL ────────────────────────────────────
     let url = match parsed["url"].as_str() {
         Some(u) if !u.is_empty() => u.to_string(),
         _ => return error_response("Missing URL"),
@@ -247,6 +348,7 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         Err(_) => return error_response("Missing SIGHTENGINE_API_SECRET"),
     };
 
+    let se_start = Instant::now();
     let result = client
         .get("https://api.sightengine.com/1.0/check.json")
         .query(&[
@@ -259,12 +361,14 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         .await?
         .json::<serde_json::Value>()
         .await?;
+    let se_ms = se_start.elapsed().as_millis() as u64;
 
     if result["status"] != "success" {
         let err = result.get("error")
             .and_then(|e| e.get("message"))
             .and_then(|m| m.as_str())
             .unwrap_or("Unknown Sightengine error");
+        eprintln!("{}", json!({"event":"sightengine_error","request_id":request_id,"error":err,"sightengine_ms":se_ms,"ms":req_start.elapsed().as_millis() as u64}));
         return error_response(err);
     }
 
@@ -291,6 +395,17 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         )
     };
 
+    eprintln!("{}", json!({
+        "event":          "scan_complete",
+        "request_id":     request_id,
+        "user_id":        user_id,
+        "platform":       platform_name,
+        "verdict":        verdict,
+        "ai_score":       ai_score,
+        "sightengine_ms": se_ms,
+        "ms":             req_start.elapsed().as_millis() as u64
+    }));
+
     Ok(Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "application/json")
@@ -304,7 +419,6 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         }).to_string()))?)
 }
 
-fn error_response(msg: &str) -> Result<Response<Body>, Error> {
     Ok(Response::builder()
         .status(StatusCode::BAD_REQUEST)
         .header("Content-Type", "application/json")

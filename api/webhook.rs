@@ -2,6 +2,7 @@ use vercel_runtime::{run, Body, Error, Request, Response, StatusCode};
 use serde_json::json;
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
+use std::time::Instant;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -11,36 +12,68 @@ async fn main() -> Result<(), Error> {
 }
 
 // ── Verify Stripe webhook signature ──────────────────────────────
+// Validates:
+//   1. Signature is present and well-formed (t= and v1= fields)
+//   2. Timestamp is within ±300 seconds of now (replay protection)
+//   3. HMAC-SHA256 matches using constant-time comparison
 fn verify_stripe_signature(payload: &[u8], sig_header: &str, secret: &str) -> bool {
     // sig_header format: t=timestamp,v1=signature,...
-    let mut timestamp = "";
+    let mut timestamp_str = "";
     let mut v1_sig = "";
 
     for part in sig_header.split(',') {
         if let Some(ts) = part.strip_prefix("t=") {
-            timestamp = ts;
+            timestamp_str = ts;
         } else if let Some(sig) = part.strip_prefix("v1=") {
-            v1_sig = sig;
+            // Only take the first v1= value
+            if v1_sig.is_empty() {
+                v1_sig = sig;
+            }
         }
     }
 
-    if timestamp.is_empty() || v1_sig.is_empty() {
+    if timestamp_str.is_empty() || v1_sig.is_empty() {
+        eprintln!("[webhook] missing t= or v1= in Stripe-Signature header");
         return false;
     }
 
-    // signed_payload = timestamp + "." + payload
-    let signed_payload = format!("{}.{}", timestamp, String::from_utf8_lossy(payload));
+    // ── Replay protection: reject if timestamp is stale ──────────
+    let webhook_ts: i64 = match timestamp_str.parse() {
+        Ok(t) => t,
+        Err(_) => {
+            eprintln!("[webhook] non-numeric timestamp in Stripe-Signature");
+            return false;
+        }
+    };
+    let now = chrono::Utc::now().timestamp();
+    let age_secs = (now - webhook_ts).abs();
+    if age_secs > 300 {
+        eprintln!("[webhook] timestamp too old or too far in future: age={}s", age_secs);
+        return false;
+    }
+
+    // ── Build signed payload: "<timestamp>.<raw-body>" ───────────
+    let signed_payload = format!("{}.{}", timestamp_str, String::from_utf8_lossy(payload));
+
+    // ── Compute expected HMAC and compare using constant-time ─────
+    // HmacSha256::verify_slice uses a timing-safe comparison internally,
+    // preventing byte-by-byte timing side-channels.
+    let expected_bytes = match hex::decode(v1_sig) {
+        Ok(b) => b,
+        Err(_) => {
+            eprintln!("[webhook] v1 signature is not valid hex");
+            return false;
+        }
+    };
 
     let mut mac = match HmacSha256::new_from_slice(secret.as_bytes()) {
         Ok(m) => m,
         Err(_) => return false,
     };
     mac.update(signed_payload.as_bytes());
-    let result = mac.finalize().into_bytes();
-    let computed = hex::encode(result);
 
-    // Constant-time comparison
-    computed == v1_sig
+    // verify_slice performs constant-time comparison
+    mac.verify_slice(&expected_bytes).is_ok()
 }
 
 // ── Update Supabase profile ───────────────────────────────────────
@@ -163,6 +196,14 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
             .body(Body::Text(json!({"error": "Method not allowed"}).to_string()))?);
     }
 
+    // ── Request tracing ──────────────────────────────────────────
+    let req_start = Instant::now();
+    let request_id = req.headers()
+        .get("x-vercel-id")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("unknown")
+        .to_string();
+
     let webhook_secret = match std::env::var("STRIPE_WEBHOOK_SECRET") {
         Ok(s) => s,
         Err(_) => return Ok(Response::builder()
@@ -200,6 +241,11 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
 
     // Verify signature
     if !verify_stripe_signature(&raw_body, &sig_header, &webhook_secret) {
+        eprintln!("{}", json!({
+            "event":      "webhook_sig_invalid",
+            "request_id": request_id,
+            "ms":         req_start.elapsed().as_millis() as u64
+        }));
         return Ok(Response::builder()
             .status(StatusCode::UNAUTHORIZED)
             .body(Body::Text(json!({"error": "Invalid signature"}).to_string()))?);
@@ -219,6 +265,7 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     match event_type {
         // ── New subscription / payment completed ──────────────────
         "checkout.session.completed" => {
+            eprintln!("{}", json!({"event":"stripe_checkout_completed","request_id":request_id}));
             let session = &event["data"]["object"];
             let customer_id = session["customer"].as_str().unwrap_or("");
             let customer_email = session["customer_details"]["email"]
@@ -252,6 +299,7 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
 
         // ── Subscription cancelled / expired ─────────────────────
         "customer.subscription.deleted" => {
+            eprintln!("{}", json!({"event":"stripe_subscription_deleted","request_id":request_id}));
             let subscription = &event["data"]["object"];
             let customer_id = subscription["customer"].as_str().unwrap_or("");
 
@@ -269,6 +317,13 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     }
 
     // Always return 200 to Stripe so it doesn't retry
+    eprintln!("{}", json!({
+        "event":      "webhook_ok",
+        "request_id": request_id,
+        "type":       event_type,
+        "ms":         req_start.elapsed().as_millis() as u64
+    }));
+
     Ok(Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "application/json")

@@ -1,6 +1,16 @@
-/target
-**/*.rs.bk
-.vercel
-.env
-node_modules
-.DS_Store
+﻿# Ignore IDE/workspace files
+.vs/
+.idea/
+
+# Build artifacts
+/target/
+
+# Local test outputs
+test_output*.txt
+
+# Lockfiles handled by repo policy
+# Cargo.lock should be committed for reproducible builds
+
+# Editor temp files
+*~
+*.swp
