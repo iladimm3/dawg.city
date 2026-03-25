@@ -141,8 +141,34 @@ async fn get_thumbnail(client: &reqwest::Client, platform: &Platform) -> Result<
             Err("Could not extract X/Twitter media. The post may be private or text-only.".to_string())
         }
 
-        Platform::Instagram(_url) => {
-            Err("Instagram scanning is coming soon. Due to platform restrictions, Instagram thumbnails can't be fetched automatically. Try a YouTube, TikTok, or X link instead!".to_string())
+        Platform::Instagram(url) => {
+            let ig_token = std::env::var("INSTAGRAM_TOKEN").unwrap_or_default();
+            let oembed_url = if !ig_token.is_empty() {
+                format!(
+                    "https://graph.facebook.com/v18.0/instagram_oembed?url={}&maxwidth=800&access_token={}",
+                    url_encode(url), ig_token
+                )
+            } else {
+                format!(
+                    "https://graph.facebook.com/v18.0/instagram_oembed?url={}&maxwidth=800",
+                    url_encode(url)
+                )
+            };
+
+            let resp = client
+                .get(&oembed_url)
+                .header("User-Agent", "Mozilla/5.0 (compatible; dawg.city/1.0)")
+                .send()
+                .await
+                .map_err(|e| format!("Instagram request failed: {}", e))?
+                .json::<serde_json::Value>()
+                .await
+                .map_err(|e| format!("Instagram parse failed: {}", e))?;
+
+            resp["thumbnail_url"]
+                .as_str()
+                .map(|s| s.to_string())
+                .ok_or_else(|| "Could not get Instagram thumbnail. Make sure the post is public and paste the full URL.".to_string())
         }
     }
 }
@@ -284,4 +310,195 @@ fn error_response(msg: &str) -> Result<Response<Body>, Error> {
         .header("Content-Type", "application/json")
         .header("Access-Control-Allow-Origin", "https://dawg.city")
         .body(Body::Text(json!({ "error": msg }).to_string()))?)
+}
+
+// ────────────────────────────────────────────────────────────────
+// Tests
+// ────────────────────────────────────────────────────────────────
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── helpers ──────────────────────────────────────────────────
+
+    fn is_youtube(url: &str) -> bool {
+        matches!(detect_platform(url), Some(Platform::YouTube(_)))
+    }
+    fn is_tiktok(url: &str) -> bool {
+        matches!(detect_platform(url), Some(Platform::TikTok(_)))
+    }
+    fn is_twitter(url: &str) -> bool {
+        matches!(detect_platform(url), Some(Platform::Twitter(_)))
+    }
+    fn is_instagram(url: &str) -> bool {
+        matches!(detect_platform(url), Some(Platform::Instagram(_)))
+    }
+    fn is_none(url: &str) -> bool {
+        detect_platform(url).is_none()
+    }
+
+    // ── YouTube detection ─────────────────────────────────────────
+
+    #[test]
+    fn youtube_watch_url() {
+        assert!(is_youtube("https://www.youtube.com/watch?v=dQw4w9WgXcQ"));
+    }
+
+    #[test]
+    fn youtube_short_url() {
+        assert!(is_youtube("https://youtu.be/dQw4w9WgXcQ"));
+    }
+
+    #[test]
+    fn youtube_shorts_url() {
+        assert!(is_youtube("https://www.youtube.com/shorts/dQw4w9WgXcQ"));
+    }
+
+    #[test]
+    fn youtube_embed_url() {
+        assert!(is_youtube("https://www.youtube.com/embed/dQw4w9WgXcQ"));
+    }
+
+    #[test]
+    fn youtube_live_url() {
+        assert!(is_youtube("https://www.youtube.com/live/dQw4w9WgXcQ"));
+    }
+
+    #[test]
+    fn youtube_extracts_correct_id() {
+        match detect_platform("https://www.youtube.com/watch?v=dQw4w9WgXcQ") {
+            Some(Platform::YouTube(id)) => assert_eq!(id, "dQw4w9WgXcQ"),
+            _ => panic!("Expected YouTube platform with ID"),
+        }
+    }
+
+    #[test]
+    fn youtube_watch_with_extra_params() {
+        assert!(is_youtube(
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42s&list=PLxxx"
+        ));
+    }
+
+    // ── TikTok detection ──────────────────────────────────────────
+
+    #[test]
+    fn tiktok_long_url() {
+        assert!(is_tiktok(
+            "https://www.tiktok.com/@user/video/7123456789012345678"
+        ));
+    }
+
+    #[test]
+    fn tiktok_short_url() {
+        assert!(is_tiktok("https://vm.tiktok.com/ZMeABCDEF/"));
+    }
+
+    #[test]
+    fn tiktok_t_url() {
+        assert!(is_tiktok("https://www.tiktok.com/t/ZTRabc123/"));
+    }
+
+    #[test]
+    fn tiktok_any_tiktok_domain() {
+        // Catches any tiktok.com URL even if pattern doesn't match exactly
+        assert!(is_tiktok("https://www.tiktok.com/@someone/video/999"));
+    }
+
+    // ── X / Twitter detection ─────────────────────────────────────
+
+    #[test]
+    fn twitter_status_url() {
+        assert!(is_twitter(
+            "https://twitter.com/elonmusk/status/1234567890123456789"
+        ));
+    }
+
+    #[test]
+    fn x_status_url() {
+        assert!(is_twitter(
+            "https://x.com/elonmusk/status/1234567890123456789"
+        ));
+    }
+
+    #[test]
+    fn x_status_with_query_params() {
+        assert!(is_twitter(
+            "https://x.com/user/status/1234567890123456789?s=20"
+        ));
+    }
+
+    // ── Instagram detection ───────────────────────────────────────
+
+    #[test]
+    fn instagram_post_url() {
+        assert!(is_instagram("https://www.instagram.com/p/ABC123xyz/"));
+    }
+
+    #[test]
+    fn instagram_reel_url() {
+        assert!(is_instagram("https://www.instagram.com/reel/ABC123xyz/"));
+    }
+
+    #[test]
+    fn instagram_tv_url() {
+        assert!(is_instagram("https://www.instagram.com/tv/ABC123xyz/"));
+    }
+
+    // ── Unsupported / garbage URLs ────────────────────────────────
+
+    #[test]
+    fn random_url_returns_none() {
+        assert!(is_none("https://example.com/some/page"));
+    }
+
+    #[test]
+    fn empty_string_returns_none() {
+        assert!(is_none(""));
+    }
+
+    #[test]
+    fn facebook_url_returns_none() {
+        assert!(is_none("https://www.facebook.com/video/12345"));
+    }
+
+    #[test]
+    fn youtube_homepage_returns_none() {
+        // No video ID — should not match
+        assert!(is_none("https://www.youtube.com/"));
+    }
+
+    // ── url_encode ────────────────────────────────────────────────
+
+    #[test]
+    fn encode_plain_ascii_unchanged() {
+        assert_eq!(url_encode("hello"), "hello");
+    }
+
+    #[test]
+    fn encode_space() {
+        assert_eq!(url_encode("hello world"), "hello%20world");
+    }
+
+    #[test]
+    fn encode_ampersand_and_equals() {
+        assert_eq!(url_encode("a=1&b=2"), "a%3D1%26b%3D2");
+    }
+
+    #[test]
+    fn encode_full_tiktok_url() {
+        let url = "https://www.tiktok.com/@user/video/123";
+        let encoded = url_encode(url);
+        // Colons and slashes must be encoded
+        assert!(encoded.contains("%3A")); // :
+        assert!(encoded.contains("%2F")); // /
+        assert!(!encoded.contains(':'));
+        assert!(!encoded.contains('/'));
+    }
+
+    #[test]
+    fn encode_unreserved_chars_unchanged() {
+        // RFC 3986 unreserved chars: A-Z a-z 0-9 - _ . ~
+        let s = "ABCabc123-_.~";
+        assert_eq!(url_encode(s), s);
+    }
 }
