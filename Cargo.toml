@@ -10,7 +10,7 @@ path = "api/analyze.rs"
 [[bin]]
 name = "webhook"
 path = "api/webhook.rs"
-[[]]
+
 [[bin]]
 name = "worker"
 path = "api/worker.rs"
