@@ -106,11 +106,12 @@ async function loadProfile(userId) {
     }
 }
 
-async function incrementScanCount() {
+function incrementScanCount() {
     if (!currentUser) return;
     scanCountMonth++;
     applyPlanUI();
-    await _sb.from('profiles').upsert({ id: currentUser.id, scan_count_month: scanCountMonth, scan_count: scanCountMonth });
+    // fire-and-forget: server already tracked the quota via increment_scan_quota RPC
+    _sb.from('profiles').upsert({ id: currentUser.id, scan_count_month: scanCountMonth, scan_count: scanCountMonth }).then().catch(() => {});
 }
 
 // ── Auth ───────────────────────────────────────────────────────────
@@ -284,7 +285,7 @@ async function analyze() {
             initInArticleAd();
         }, 60);
 
-        if (currentUser) { await incrementScanCount(); }
+        if (currentUser) { incrementScanCount(); }
         else { localStorage.setItem('guest_scans', parseInt(localStorage.getItem('guest_scans') || '0') + 1); }
 
     } catch (err) { showError(err.message); }
