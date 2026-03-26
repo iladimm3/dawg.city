@@ -1,129 +1,79 @@
-```markdown
-# dawg.city 🐶🏙️
+# dawg.city — AI video deepfake detection
 
-**dawg.city** is a production-ready AI video deepfake detection platform that instantly flags AI-generated content (YouTube, Shorts, TikTok/Reels). Now LIVE with 10+ features including freemium Stripe payments, Supabase auth, AdSense revenue, ConvertKit newsletters, and Hugging Face Inference API for 95%+ Seedance detection accuracy.
+Lightweight production platform to detect AI-generated video frames using a static frontend and small Rust serverless APIs.
 
-[![Vercel](https://theregister.s3.amazonaws.com/production/badge.svg)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourusername%2Fdawg-city)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+Overview
+--------
+`dawg.city` provides fast, opinionated detection for social video platforms (YouTube, TikTok, X/Twitter, Instagram) using a static site (Tailwind + Vanilla JS) and Rust serverless functions deployed on Vercel.
 
-## ✅ **Production Features Live**
+Key features
+- Minimal, fast static frontend
+- Rust serverless endpoints: `analyze` and `webhook`
+- Asynchronous processing via job queue + worker (Supabase-backed)
+- Hugging Face inference for thumbnail/frame scoring
+- Supabase for auth and quota tracking, Stripe for billing
 
-| Feature | Status | Tech |
-|---------|--------|------|
-| **Core AI Detection** | ✅ Working | HF Inference API (Naman712 model) |
-| **Freemium Plans** | ✅ Stripe integrated | Stripe + scan quotas |
-| **User Auth** | ✅ Live | Supabase + Google OAuth |
-| **Monetization** | ✅ Revenue | AdSense + Affiliates |
-| **Newsletter** | ✅ 100+ subs | ConvertKit |
-| **Full Site** | ✅ 8 pages | index, blog(5 posts), about, pricing, privacy |
-| **Social Share** | ✅ X/Twitter | One-click results |
-| **SEO** | ✅ Ranked | Meta tags + structured data |
-| **Analytics** | ✅ Tracking | Vercel + scan counts |
+Quick start
+-----------
+1. Fork or clone the repository.
+2. Add required environment variables in Vercel or locally (see below).
+3. Deploy to Vercel (auto-detects Rust runtime) or run locally for development.
 
-## 🛠 **Modern Production Stack**
+Environment variables (examples)
+--------------------------------
+Set these in Vercel's dashboard or in your local environment when running locally.
 
 ```
-Frontend: Tailwind CSS + Vanilla JS + Single index.html
-Backend: Rust (vercel_runtime) + HF Inference API
-Auth: Supabase (Google OAuth)
-Payments: Stripe Checkout
-Email: ConvertKit API
-Hosting: Vercel (Global Edge Network)
-Tracking: Vercel Analytics
-```
-
-## 🚀 **One-Click Deploy**
-
-1. **Fork/Clone** this repo
-2. **Import to Vercel** → Auto-detects Rust runtime
-3. **Add Environment Variables**:
-```
-# AI detection
-SIGHTENGINE_API_USER=your_sightengine_user
-SIGHTENGINE_API_SECRET=your_sightengine_secret
-
-# Hugging Face (inference)
+# AI / inference
 HF_API_KEY=your_huggingface_api_key
 HF_MODEL=naman712/seedance
 
-# Auth & quotas
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+# Sightengine (optional)
+SIGHTENGINE_API_USER=your_sightengine_user
+SIGHTENGINE_API_SECRET=your_sightengine_secret
+
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 # Payments
 STRIPE_SECRET_KEY=your_stripe_secret_key
 STRIPE_WEBHOOK_SECRET=your_stripe_webhook_signing_secret
 
-# Email
-CONVERTKIT_API_KEY=your_convertkit_key
-
-# Bot protection (set in Vercel env — never hardcode)
-RECAPTCHA_SECRET=your_recaptcha_secret_key
-
 # Optional
 INSTAGRAM_TOKEN=your_instagram_graph_token
-```
-4. **Custom Domain**: Point `dawg.city` → Vercel
-5. **Deploy** → Live in 60 seconds!
-
-## 🎯 **How It Works**
-
-```
-1. User pastes YouTube / TikTok / X / Instagram URL
-2. reCAPTCHA v3 verifies the request is human
-3. Supabase JWT authenticates the user; atomic quota check runs
-4. Rust backend fetches the video thumbnail
-5. Sightengine GenAI model scores the thumbnail (0–1)
-6. Returns verdict: REAL / FAKE + confidence score
-7. User shares result or upgrades via Stripe
+RECAPTCHA_SECRET=your_recaptcha_secret_key
 ```
 
-## 📁 **Project Structure**
+Run the worker locally
+----------------------
+The project includes a prototype worker binary that polls a `jobs` table in Supabase, claims and processes jobs, and writes results back.
 
-```
-dawg.city/
-├── index.html           # Production frontend (Tailwind + auth)
-├── api/
-│   ├── analyze.rs       # Rust handler — AI scan endpoint  [[bin] name="analyze"]
-│   └── webhook.rs       # Rust handler — Stripe webhooks   [[bin] name="webhook"]
-├── Cargo.toml           # Declares both bins; paths: api/analyze.rs, api/webhook.rs
-├── Cargo.lock           # Pinned dependency versions (commit this)
-├── blog.html            # 5 SEO posts
-├── supabase/            # Auth config
-├── vercel.json          # Edge deployment
-├── stripe/              # Payment links
-└── README.md
+```bash
+export SUPABASE_URL="https://your-project.supabase.co"
+export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+export HF_API_KEY="hf_xxx"              # optional but required for real HF inference
+export HF_MODEL="naman712/seedance"
+
+cargo run --bin worker
 ```
 
-## 💰 **Revenue Model**
+Development & CI
+-----------------
+- Unit tests and network-mocked tests are included for worker helpers.
+- A GitHub Actions workflow runs `cargo fmt`, `cargo clippy`, `cargo build`, `cargo test`, and `cargo audit` on `main`.
 
-- **Free**: 5 scans/day
-- **Pro**: $9/mo unlimited scans
-- **AdSense**: Display + video ads
-- **Affiliates**: Detection tool partners
-- **ConvertKit**: Newsletter upsells
+Architecture notes
+------------------
+For a full architecture assessment, see the repository's architecture review: [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md)
 
-## 🎉 **Launch Ready**
+Contributing
+------------
+Feel free to open issues or PRs. Key areas where contributions help:
+- CI and tests for production handlers
+- Robust HF integration and error handling
+- Quota enforcement and edge rate-limiting
 
-✅ **All core features** complete  
-✅ **Monetization** generating revenue  
-✅ **SEO/Analytics** tracking  
-✅ **Mobile-first** responsive  
-🔲 **Product Hunt/Reddit** launch next  
-
-**Live at**: [dawg.city](https://dawg.city)  
-**Blog**: [dawg.city/blog](https://dawg.city/blog)  
-
-## 🙌 **Show the Dev Some Love**
-
-⭐ Star this repo  
-🐦 Tweet your scans  
-📧 Join 100+ newsletter subscribers  
-
-```
-Made with ❤️ in Morocco for the global AI safety community
-```
-
-## 📄 **License**
-
+License
+-------
 MIT
