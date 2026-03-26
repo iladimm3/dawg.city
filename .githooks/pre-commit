@@ -17,7 +17,7 @@ patterns=(
 EXIT_CODE=0
 
 for pattern in "${patterns[@]}"; do
-    if git diff --cached --name-only --diff-filter=ACM | xargs grep -l "$pattern" 2>/dev/null; then
+    if git diff --cached --name-only --diff-filter=ACM | grep -v "^\.githooks/" | xargs grep -l "$pattern" 2>/dev/null; then
         echo "❌ BLOCKED: Potential secret pattern detected: $pattern"
         echo "   Run: git diff --cached | grep -i '$pattern' to see details"
         EXIT_CODE=1
