@@ -199,7 +199,7 @@ async function analyze() {
             recaptchaToken = await new Promise((resolve, reject) => {
                 try {
                     grecaptcha.ready(() => {
-                        grecaptcha.execute('6LdrpZIsAAAAAMxHRMOd9pKS0DOxV9Pp7yXPF8UV', { action: 'analyze' })
+                        grecaptcha.execute('6LdIIZgsAAAAAB599FU3Jyyq3a8dcTSOodDsbjiC', { action: 'analyze' })
                             .then(resolve).catch(reject);
                     });
                 } catch (e) { reject(e); }
