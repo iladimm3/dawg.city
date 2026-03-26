@@ -209,9 +209,17 @@ async function analyze() {
             throw e;
         }
 
+        const headers = { 'Content-Type': 'application/json' };
+        if (currentUser && _sb) {
+            const { data: { session } } = await _sb.auth.getSession();
+            if (session?.access_token) {
+                headers['Authorization'] = `Bearer ${session.access_token}`;
+            }
+        }
+
         const response = await fetch('/api/analyze', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ url, recaptcha_token: recaptchaToken })
         });
 

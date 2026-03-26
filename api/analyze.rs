@@ -245,79 +245,76 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     }
 
     // ── Authenticate caller via Supabase JWT ──────────────────────
-    // Frontend must send:  Authorization: Bearer <supabase-session-token>
+    // ── Authenticate caller (optional — guests may scan without a token) ──
     let user_jwt = req.headers()
         .get("authorization")
         .and_then(|v| v.to_str().ok())
         .and_then(|v| v.strip_prefix("Bearer "))
-        .map(|s| s.to_string());
+        .map(|s| s.to_string())
+        .filter(|t| !t.is_empty());
 
-    let user_jwt = match user_jwt {
-        Some(t) if !t.is_empty() => t,
-        _ => {
-            eprintln!("{}", json!({"event":"auth_missing","request_id":request_id,"ms":req_start.elapsed().as_millis() as u64}));
-            return error_response("Authentication required");
-        }
-    };
+    let user_id: String = if let Some(jwt) = user_jwt {
+        // Validate JWT with Supabase and retrieve the user record
+        let auth_result = client
+            .get(format!("{}/auth/v1/user", supabase_url))
+            .header("apikey", &supabase_service_key)
+            .header("Authorization", format!("Bearer {}", jwt))
+            .send()
+            .await;
 
-    // Validate JWT with Supabase and retrieve the user record
-    let auth_result = client
-        .get(format!("{}/auth/v1/user", supabase_url))
-        .header("apikey", &supabase_service_key)
-        .header("Authorization", format!("Bearer {}", user_jwt))
-        .send()
-        .await;
+        let id = match auth_result {
+            Ok(r) if r.status().is_success() => {
+                let user: serde_json::Value = r.json().await.unwrap_or(json!({}));
+                match user["id"].as_str().map(|s| s.to_string()) {
+                    Some(id) => id,
+                    None => return error_response("Could not resolve user identity"),
+                }
+            }
+            Ok(r) if r.status().as_u16() == 401 => {
+                return error_response("Invalid or expired session. Please log in again.");
+            }
+            Ok(_) => return error_response("Authentication failed"),
+            Err(_) => return error_response("Authentication check failed. Please try again."),
+        };
 
-    let user_id = match auth_result {
-        Ok(r) if r.status().is_success() => {
-            let user: serde_json::Value = r.json().await.unwrap_or(json!({}));
-            match user["id"].as_str().map(|s| s.to_string()) {
-                Some(id) => id,
-                None => return error_response("Could not resolve user identity"),
+        // ── Atomic quota enforcement (server-authoritative) ───────
+        // Calls a Supabase SQL function that atomically increments the
+        // monthly scan counter and returns NULL when quota is exhausted.
+        let quota_resp = client
+            .post(format!("{}/rest/v1/rpc/increment_scan_quota", supabase_url))
+            .header("apikey", &supabase_service_key)
+            .header("Authorization", format!("Bearer {}", supabase_service_key))
+            .header("Content-Type", "application/json")
+            .json(&json!({ "p_user_id": id }))
+            .send()
+            .await;
+
+        match quota_resp {
+            Ok(r) if r.status().is_success() => {
+                let body = r.json::<serde_json::Value>().await.unwrap_or(serde_json::Value::Null);
+                if body.is_null() {
+                    eprintln!("{}", json!({"event":"quota_exceeded","request_id":request_id,"user_id":id,"ms":req_start.elapsed().as_millis() as u64}));
+                    return error_response(
+                        "Scan quota exceeded for this billing period. Please upgrade your plan."
+                    );
+                }
+            }
+            Ok(r) => {
+                eprintln!("[analyze] quota RPC failed: status={}", r.status());
+                return error_response("Could not verify scan quota. Please try again.");
+            }
+            Err(e) => {
+                eprintln!("[analyze] quota RPC error: {}", e);
+                return error_response("Could not verify scan quota. Please try again.");
             }
         }
-        Ok(r) if r.status().as_u16() == 401 => {
-            return error_response("Invalid or expired session. Please log in again.");
-        }
-        Ok(_) => return error_response("Authentication failed"),
-        Err(_) => return error_response("Authentication check failed. Please try again."),
+
+        id
+    } else {
+        // Guest scan — rate limiting handled client-side via localStorage
+        eprintln!("{}", json!({"event":"guest_scan","request_id":request_id,"ms":req_start.elapsed().as_millis() as u64}));
+        "guest".to_string()
     };
-
-    // ── Atomic quota enforcement (server-authoritative) ───────────
-    // Calls a Supabase SQL function that does:
-    //   UPDATE profiles
-    //   SET scan_count_month = scan_count_month + 1
-    //   WHERE id = p_user_id AND scan_count_month < quota_limit
-    //   RETURNING scan_count_month;
-    // Returns NULL when quota is exhausted → no TOCTOU race possible.
-    let quota_resp = client
-        .post(format!("{}/rest/v1/rpc/increment_scan_quota", supabase_url))
-        .header("apikey", &supabase_service_key)
-        .header("Authorization", format!("Bearer {}", supabase_service_key))
-        .header("Content-Type", "application/json")
-        .json(&json!({ "p_user_id": user_id }))
-        .send()
-        .await;
-
-    match quota_resp {
-        Ok(r) if r.status().is_success() => {
-            let body = r.json::<serde_json::Value>().await.unwrap_or(serde_json::Value::Null);
-            if body.is_null() {
-                eprintln!("{}", json!({"event":"quota_exceeded","request_id":request_id,"user_id":user_id,"ms":req_start.elapsed().as_millis() as u64}));
-                return error_response(
-                    "Scan quota exceeded for this billing period. Please upgrade your plan."
-                );
-            }
-        }
-        Ok(r) => {
-            eprintln!("[analyze] quota RPC failed: status={}", r.status());
-            return error_response("Could not verify scan quota. Please try again.");
-        }
-        Err(e) => {
-            eprintln!("[analyze] quota RPC error: {}", e);
-            return error_response("Could not verify scan quota. Please try again.");
-        }
-    }
 
     // ── Extract + validate URL ────────────────────────────────────
     let url = match parsed["url"].as_str() {
