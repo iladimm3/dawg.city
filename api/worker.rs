@@ -336,3 +336,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn encode_unreserved_chars_unchanged() {
+        // RFC 3986 unreserved chars: A-Z a-z 0-9 - _ . ~
+        let s = "ABCabc123-_.~";
+        assert_eq!(url_encode(s), s);
+    }
+
+    #[test]
+    fn url_encode_reserved_chars() {
+        assert_eq!(url_encode("a b"), "a%20b");
+        assert_eq!(url_encode("foo@bar"), "foo%40bar");
+    }
+
+    #[test]
+    fn extract_youtube_id_variants() {
+        let id = "dQw4w9WgXcQ";
+        let urls = vec![
+            format!("https://www.youtube.com/watch?v={}", id),
+            format!("https://youtu.be/{}", id),
+            format!("https://www.youtube.com/shorts/{}", id),
+            format!("https://www.youtube.com/embed/{}", id),
+            format!("https://www.youtube.com/live/{}", id),
+        ];
+        for u in urls {
+            assert_eq!(extract_youtube_id(&u), Some(id.to_string()));
+        }
+        assert_eq!(extract_youtube_id("https://example.com/"), None);
+    }
+}
