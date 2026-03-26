@@ -193,19 +193,25 @@ async function analyze() {
     try {
         let recaptchaToken = null;
         try {
-            if (typeof grecaptcha === 'undefined' || !grecaptcha.ready) {
+            if (typeof grecaptcha === 'undefined') {
                 throw new Error('reCAPTCHA not loaded');
             }
-            recaptchaToken = await new Promise((resolve, reject) => {
-                try {
-                    grecaptcha.ready(() => {
-                        grecaptcha.execute('6LdIIZgsAAAAAB599FU3Jyyq3a8dcTSOodDsbjiC', { action: 'analyze' })
-                            .then(resolve).catch(reject);
-                    });
-                } catch (e) { reject(e); }
-            });
+            const RECAPTCHA_TIMEOUT_MS = 8000;
+            recaptchaToken = await Promise.race([
+                new Promise((resolve, reject) => {
+                    try {
+                        grecaptcha.ready(() => {
+                            grecaptcha.execute('6LdIIZgsAAAAAB599FU3Jyyq3a8dcTSOodDsbjiC', { action: 'analyze' })
+                                .then(resolve).catch(reject);
+                        });
+                    } catch (e) { reject(e); }
+                }),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('reCAPTCHA timed out')), RECAPTCHA_TIMEOUT_MS)
+                )
+            ]);
         } catch (e) {
-            showError('reCAPTCHA not available or invalid site key — please check configuration or disable adblockers.');
+            showError('reCAPTCHA unavailable — please disable your adblocker or try again.');
             throw e;
         }
 
