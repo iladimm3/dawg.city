@@ -16,6 +16,8 @@ const SUPABASE_URL = 'https://uywuhvqsgzxltkvksvjv.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5d3VodnFzZ3p4bHRrdmtzdmp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDE0NDMsImV4cCI6MjA4OTc3NzQ0M30.VA_6lwzbU1IHuPpMgIpy7lcA0XiN0Op5PB4Tl3K3JLk';
 const SCAN_LIMITS  = { free: 5, starter: 50, pro: Infinity };
 const CIRC         = 2 * Math.PI * 65;
+const GUEST_SCAN_LIMIT = 3;
+const GUEST_WINDOW_MS = 8 * 60 * 60 * 1000;
 
 // ── DOM refs ───────────────────────────────────────────────────────
 const input          = document.getElementById('url-input');
@@ -161,6 +163,27 @@ function showError(msg) {
     errorBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+function getGuestScanState() {
+    const now = Date.now();
+    const rawStart = localStorage.getItem('guest_scan_window_start');
+    let windowStart = rawStart ? parseInt(rawStart, 10) : null;
+    let guestScans = parseInt(localStorage.getItem('guest_scans') || '0', 10);
+
+    if (!Number.isFinite(guestScans) || guestScans < 0) guestScans = 0;
+
+    const invalidStart = !Number.isFinite(windowStart);
+    const expired = windowStart && (now - windowStart) >= GUEST_WINDOW_MS;
+
+    if (invalidStart || !windowStart || expired) {
+        windowStart = now;
+        guestScans = 0;
+        localStorage.setItem('guest_scan_window_start', String(windowStart));
+        localStorage.setItem('guest_scans', String(guestScans));
+    }
+
+    return { guestScans, windowStart, now };
+}
+
 async function analyze() {
     const url = input.value.trim();
     if (!url) { input.focus(); return; }
@@ -175,11 +198,11 @@ async function analyze() {
         }
     }
 
-    // Guest limit: 3 scans via localStorage
+    // Guest limit: 3 scans per 8-hour window via localStorage
     if (!currentUser) {
-        const guestScans = parseInt(localStorage.getItem('guest_scans') || '0');
-        if (guestScans >= 3) {
-            showError("You've used your 3 free guest scans. Sign in for more!");
+        const { guestScans } = getGuestScanState();
+        if (guestScans >= GUEST_SCAN_LIMIT) {
+            showError("You've used your 3 free guest scans. Sign in for more, or come back in 8 hours for more scans!");
             document.getElementById('signin-overlay').classList.add('open');
             document.body.style.overflow = 'hidden';
             return;
@@ -285,8 +308,12 @@ async function analyze() {
             initInArticleAd();
         }, 60);
 
-        if (currentUser) { incrementScanCount(); }
-        else { localStorage.setItem('guest_scans', parseInt(localStorage.getItem('guest_scans') || '0') + 1); }
+        if (currentUser) {
+            incrementScanCount();
+        } else {
+            const { guestScans } = getGuestScanState();
+            localStorage.setItem('guest_scans', String(guestScans + 1));
+        }
 
     } catch (err) { showError(err.message); }
     finally { setLoading(false); }
