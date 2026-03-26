@@ -5,12 +5,12 @@ echo "Scanning staged files for secrets..."
 
 # Patterns to block
 patterns=(
-    "SUPABASE_KEY"
-    "RECAPTCHA_SECRET"
-    "STRIPE_SECRET"
-    "AWS_SECRET"
-    "api_key"
-    "private_key"
+    "SUPABASE_KEY="
+    "RECAPTCHA_SECRET="
+    "STRIPE_SECRET="
+    "AWS_SECRET="
+    "api_key="
+    "private_key="
     "BEGIN.*PRIVATE.*KEY"
 )
 

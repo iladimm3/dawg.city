@@ -180,8 +180,6 @@ async fn main() -> Result<(), Error> {
 
 pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     if req.method() == "OPTIONS" {
-pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
-    if req.method() == "OPTIONS" {
         return Ok(Response::builder()
             .status(StatusCode::NO_CONTENT)
             .header("Access-Control-Allow-Origin", "https://dawg.city")
@@ -419,6 +417,7 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         }).to_string()))?)
 }
 
+fn error_response(msg: &str) -> Result<Response<Body>, Error> {
     Ok(Response::builder()
         .status(StatusCode::BAD_REQUEST)
         .header("Content-Type", "application/json")
