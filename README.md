@@ -1,10 +1,20 @@
 # dawg.city — AI video deepfake detection
 
+[![CI](https://github.com/iladimm3/dawg.city/actions/workflows/worker-ci.yml/badge.svg?branch=main)](https://github.com/iladimm3/dawg.city/actions/workflows/worker-ci.yml)
+[![Secret Scan](https://github.com/iladimm3/dawg.city/actions/workflows/secret-scan.yml/badge.svg?branch=main)](https://github.com/iladimm3/dawg.city/actions/workflows/secret-scan.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Lightweight production platform to detect AI-generated video frames using a static frontend and small Rust serverless APIs.
 
 Overview
 --------
 `dawg.city` provides fast, opinionated detection for social video platforms (YouTube, TikTok, X/Twitter, Instagram) using a static site (Tailwind + Vanilla JS) and Rust serverless functions deployed on Vercel.
+
+Badges
+------
+- **CI**: status for core Rust checks and tests (see workflow `worker-ci.yml`)
+- **Secret Scan**: automated repository secret scanning (truffleHog + detect-secrets)
+- **License**: MIT
 
 Key features
 - Minimal, fast static frontend
@@ -18,6 +28,14 @@ Quick start
 1. Fork or clone the repository.
 2. Add required environment variables in Vercel or locally (see below).
 3. Deploy to Vercel (auto-detects Rust runtime) or run locally for development.
+
+Captures d'écran
+----------------
+Voici quelques captures d'écran (remplacez par vos propres images si vous préférez) :
+
+![Dashboard placeholder](https://placehold.co/800x450?text=Dashboard)
+
+![Scan result placeholder](https://placehold.co/800x450?text=Scan+Result)
 
 Environment variables (examples)
 --------------------------------
