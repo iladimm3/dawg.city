@@ -281,6 +281,7 @@ async function analyze() {
             secondaryBar.style.width = `${inv}%`;
             document.getElementById('mono-section').classList.remove('hidden');
             resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            initInArticleAd();
         }, 60);
 
         if (currentUser) { await incrementScanCount(); }
@@ -369,5 +370,27 @@ window.handleModalClick = handleModalClick;
 window.fillExample      = fillExample;
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeUpgradeModal(); window.closeAuth(); } });
+
+// ── AdSense init (deferred to avoid width=0 on hidden elements) ────
+function pushAd(el) {
+    if (!el || el.dataset.adPushed) return;
+    try {
+        const w = el.closest('.ad-wrap') || el.parentElement;
+        if (w && w.offsetWidth === 0) return; // still hidden, skip
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+        el.dataset.adPushed = 'true';
+    } catch (e) { /* AdSense errors are non-fatal */ }
+}
+
+window.addEventListener('load', () => {
+    // Push top banner ad only (it's always visible)
+    document.querySelectorAll('.adsbygoogle:not([data-ad-lazy])').forEach(pushAd);
+});
+
+// in-article ad (inside result-card) is pushed when results are shown
+const _origShowResult = window._showResultCard;
+function initInArticleAd() {
+    document.querySelectorAll('.adsbygoogle[data-ad-lazy]').forEach(pushAd);
+}
 
 initAuth();
