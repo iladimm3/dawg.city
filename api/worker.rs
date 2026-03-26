@@ -1,6 +1,7 @@
 use tokio::time::{sleep, Duration};
 use reqwest::Client;
 use reqwest::header::CONTENT_TYPE;
+use regex::Regex;
 use serde_json::{json, Value};
 use chrono::Utc;
 
@@ -70,6 +71,148 @@ async fn fetch_and_claim_job(
     }))
 }
 
+    // Helper: simple URL encode (works for building oembed queries)
+    fn url_encode(s: &str) -> String {
+        let mut encoded = String::new();
+        for b in s.bytes() {
+            match b {
+                b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' |
+                b'-' | b'_' | b'.' | b'~' => encoded.push(b as char),
+                _ => encoded.push_str(&format!("%{:02X}", b)),
+            }
+        }
+        encoded
+    }
+
+    async fn try_fetch_image(client: &Client, url: &str) -> Result<Option<(bytes::Bytes, String)>, Box<dyn std::error::Error>> {
+        let ua = "Mozilla/5.0 (compatible; dawg.city/1.0)";
+        let resp = client.get(url).header("User-Agent", ua).send().await?;
+        if !resp.status().is_success() {
+            return Ok(None);
+        }
+        let content_type = resp
+            .headers()
+            .get(CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("application/octet-stream")
+            .to_string();
+        if !content_type.starts_with("image/") {
+            return Ok(None);
+        }
+        let bytes = resp.bytes().await?;
+        if bytes.len() < 64 {
+            // too small to be a valid thumbnail
+            return Ok(None);
+        }
+        Ok(Some((bytes, content_type)))
+    }
+
+    fn extract_youtube_id(url: &str) -> Option<String> {
+        let patterns = [
+            r"(?:youtube\.com/watch\?v=)([a-zA-Z0-9_-]{11})",
+            r"(?:youtu\.be/)([a-zA-Z0-9_-]{11})",
+            r"(?:youtube\.com/shorts/)([a-zA-Z0-9_-]{11})",
+            r"(?:youtube\.com/embed/)([a-zA-Z0-9_-]{11})",
+            r"(?:youtube\.com/live/)([a-zA-Z0-9_-]{11})",
+        ];
+        for pat in patterns.iter() {
+            if let Ok(re) = Regex::new(pat) {
+                if let Some(c) = re.captures(url) {
+                    return Some(c[1].to_string());
+                }
+            }
+        }
+        None
+    }
+
+    async fn fetch_thumbnail_for_url(client: &Client, url: &str) -> Result<(bytes::Bytes, String), Box<dyn std::error::Error>> {
+        // 1) Try direct fetch
+        if let Some(img) = try_fetch_image(client, url).await? {
+            return Ok(img);
+        }
+
+        // 2) YouTube heuristic
+        if let Some(id) = extract_youtube_id(url) {
+            let candidates = vec![
+                format!("https://img.youtube.com/vi/{}/maxresdefault.jpg", id),
+                format!("https://img.youtube.com/vi/{}/sddefault.jpg", id),
+                format!("https://img.youtube.com/vi/{}/hqdefault.jpg", id),
+                format!("https://img.youtube.com/vi/{}/default.jpg", id),
+            ];
+            for c in candidates.iter() {
+                if let Some(img) = try_fetch_image(client, c).await? {
+                    return Ok(img);
+                }
+            }
+        }
+
+        // 3) TikTok oembed
+        if url.contains("tiktok.com") || url.contains("vm.tiktok.com") {
+            let oembed = format!("https://www.tiktok.com/oembed?url={}", url_encode(url));
+            if let Ok(resp) = client.get(&oembed).header("User-Agent", "Mozilla/5.0 (compatible; dawg.city/1.0)").send().await {
+                if resp.status().is_success() {
+                    if let Ok(json) = resp.json::<Value>().await {
+                        if let Some(th_url) = json["thumbnail_url"].as_str() {
+                            if let Some(img) = try_fetch_image(client, th_url).await? {
+                                return Ok(img);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4) X / Twitter via api.fxtwitter.com
+        if url.contains("twitter.com") || url.contains("x.com") {
+            let mut fx = url.to_string().replace("twitter.com", "api.fxtwitter.com");
+            fx = fx.replace("x.com", "api.fxtwitter.com");
+            if let Ok(resp) = client.get(&fx).header("User-Agent", "Mozilla/5.0 (compatible; dawg.city/1.0)").send().await {
+                if resp.status().is_success() {
+                    if let Ok(json) = resp.json::<Value>().await {
+                        if let Some(img) = json["tweet"]["media"]["photos"].get(0).and_then(|p| p["url"].as_str()) {
+                            if let Some(imgb) = try_fetch_image(client, img).await? {
+                                return Ok(imgb);
+                            }
+                        }
+                        if let Some(img) = json["tweet"]["media"]["videos"].get(0).and_then(|v| v["thumbnail_url"].as_str()) {
+                            if let Some(imgb) = try_fetch_image(client, img).await? {
+                                return Ok(imgb);
+                            }
+                        }
+                        if let Some(img) = json["tweet"]["author"]["avatar_url"].as_str() {
+                            if let Some(imgb) = try_fetch_image(client, img).await? {
+                                return Ok(imgb);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 5) Instagram oembed (optional token)
+        if url.contains("instagram.com") {
+            let ig_token = std::env::var("INSTAGRAM_TOKEN").ok();
+            let oembed = if let Some(tok) = ig_token {
+                format!("https://graph.facebook.com/v18.0/instagram_oembed?url={}&maxwidth=800&access_token={}", url_encode(url), tok)
+            } else {
+                format!("https://graph.facebook.com/v18.0/instagram_oembed?url={}&maxwidth=800", url_encode(url))
+            };
+            if let Ok(resp) = client.get(&oembed).header("User-Agent", "Mozilla/5.0 (compatible; dawg.city/1.0)").send().await {
+                if resp.status().is_success() {
+                    if let Ok(json) = resp.json::<Value>().await {
+                        if let Some(th) = json["thumbnail_url"].as_str() {
+                            if let Some(imgb) = try_fetch_image(client, th).await? {
+                                return Ok(imgb);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Err(format!("failed to obtain thumbnail for URL: {}", url).into())
+    }
+
 async fn process_job(
     client: &Client,
     job: &Job,
@@ -79,21 +222,8 @@ async fn process_job(
     eprintln!("[worker] processing job id={} url={}", job.id, job.url);
 
     if let Some(hf_key) = hf_api_key {
-        // 1) Fetch the target URL (expected to be an image/thumbnail)
-        let fetched = client.get(&job.url).send().await?;
-        if !fetched.status().is_success() {
-            return Err(format!("failed to fetch url {}: status {}", job.url, fetched.status()).into());
-        }
-        let content_type = fetched
-            .headers()
-            .get(CONTENT_TYPE)
-            .and_then(|v| v.to_str().ok())
-            .unwrap_or("application/octet-stream")
-            .to_string();
-        if !content_type.starts_with("image/") {
-            return Err(format!("unsupported content-type for HF inference: {}", content_type).into());
-        }
-        let bytes = fetched.bytes().await?;
+        // 1) Obtain an image/thumbnail (direct or via platform fallback)
+        let (bytes, content_type) = fetch_thumbnail_for_url(client, &job.url).await?;
 
         // 2) Call Hugging Face Inference API (binary image upload)
         let hf_url = format!("https://api-inference.huggingface.co/models/{}", hf_model);
