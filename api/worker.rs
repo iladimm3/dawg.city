@@ -25,9 +25,10 @@ async fn fetch_and_claim_job(
         .header("Authorization", format!("Bearer {}", service_key))
         .send()
         .await?;
-    if !resp.status().is_success() {
+    let resp_status = resp.status();
+    if !resp_status.is_success() {
         let t = resp.text().await.unwrap_or_default();
-        eprintln!("[worker] fetch jobs failed: {} - {}", resp.status(), t);
+        eprintln!("[worker] fetch jobs failed: {} - {}", resp_status, t);
         return Ok(None);
     }
     let arr = resp.json::<Value>().await?;
@@ -52,9 +53,10 @@ async fn fetch_and_claim_job(
         .json(&json!({"status": "processing", "updated_at": Utc::now().to_rfc3339()}))
         .send()
         .await?;
-    if !patch_resp.status().is_success() {
+    let patch_status = patch_resp.status();
+    if !patch_status.is_success() {
         let t = patch_resp.text().await.unwrap_or_default();
-        eprintln!("[worker] claim failed: {} - {}", patch_resp.status(), t);
+        eprintln!("[worker] claim failed: {} - {}", patch_status, t);
         return Ok(None);
     }
     let claimed = patch_resp.json::<Value>().await?;
@@ -296,9 +298,10 @@ async fn finalize_job(
         .json(&payload)
         .send()
         .await?;
-    if !resp.status().is_success() {
+    let resp_status = resp.status();
+    if !resp_status.is_success() {
         let t = resp.text().await.unwrap_or_default();
-        eprintln!("[worker] finalize failed: {} - {}", resp.status(), t);
+        eprintln!("[worker] finalize failed: {} - {}", resp_status, t);
     } else {
         eprintln!("[worker] job {} finalized as {}", job_id, status_str);
     }
