@@ -1,5 +1,6 @@
 use tokio::time::{sleep, Duration};
 use reqwest::Client;
+use reqwest::header::CONTENT_TYPE;
 use serde_json::{json, Value};
 use chrono::Utc;
 
@@ -70,23 +71,67 @@ async fn fetch_and_claim_job(
 }
 
 async fn process_job(
-    _client: &Client,
+    client: &Client,
     job: &Job,
     hf_api_key: Option<&str>,
-    _hf_model: &str,
+    hf_model: &str,
 ) -> Result<Value, Box<dyn std::error::Error>> {
     eprintln!("[worker] processing job id={} url={}", job.id, job.url);
-    // Prototype behaviour: if HF key present, simulate an inference call; otherwise return a stubbed result.
-    // Real HF integration should POST image bytes or a proper payload to the HF Inference API.
-    if hf_api_key.is_some() {
-        // Simulate network+inference latency
-        sleep(Duration::from_secs(2)).await;
+
+    if let Some(hf_key) = hf_api_key {
+        // 1) Fetch the target URL (expected to be an image/thumbnail)
+        let fetched = client.get(&job.url).send().await?;
+        if !fetched.status().is_success() {
+            return Err(format!("failed to fetch url {}: status {}", job.url, fetched.status()).into());
+        }
+        let content_type = fetched
+            .headers()
+            .get(CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("application/octet-stream")
+            .to_string();
+        if !content_type.starts_with("image/") {
+            return Err(format!("unsupported content-type for HF inference: {}", content_type).into());
+        }
+        let bytes = fetched.bytes().await?;
+
+        // 2) Call Hugging Face Inference API (binary image upload)
+        let hf_url = format!("https://api-inference.huggingface.co/models/{}", hf_model);
+        let hf_resp = client
+            .post(&hf_url)
+            .header("Authorization", format!("Bearer {}", hf_key))
+            .header(CONTENT_TYPE, content_type.clone())
+            .body(bytes)
+            .send()
+            .await?;
+
+        let status = hf_resp.status();
+        let hf_text = hf_resp.text().await?;
+        if !status.is_success() {
+            return Err(format!("HF inference failed: {} - {}", status, hf_text).into());
+        }
+        let hf_json: Value = serde_json::from_str(&hf_text)?;
+
+        // Map to a simple verdict if present, otherwise include raw HF output
+        let verdict = hf_json.get(0)
+            .and_then(|v| v.get("label"))
+            .and_then(|l| l.as_str())
+            .or_else(|| hf_json.get("label").and_then(|l| l.as_str()))
+            .unwrap_or("unknown")
+            .to_string();
+        let confidence = hf_json.get(0)
+            .and_then(|v| v.get("score"))
+            .and_then(|s| s.as_f64())
+            .or_else(|| hf_json.get("score").and_then(|s| s.as_f64()))
+            .unwrap_or(0.0);
+
         Ok(json!({
-            "verdict": "likely_real",
-            "confidence": 0.92,
-            "details": format!("Stubbed HF call for {}", job.url)
+            "verdict": verdict,
+            "confidence": confidence,
+            "hf_raw": hf_json
         }))
     } else {
+        // fallback: simulated result when no HF key is configured
         sleep(Duration::from_secs(1)).await;
         Ok(json!({
             "verdict": "unknown",

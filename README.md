@@ -42,6 +42,10 @@ Tracking: Vercel Analytics
 SIGHTENGINE_API_USER=your_sightengine_user
 SIGHTENGINE_API_SECRET=your_sightengine_secret
 
+# Hugging Face (inference)
+HF_API_KEY=your_huggingface_api_key
+HF_MODEL=naman712/seedance
+
 # Auth & quotas
 SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
