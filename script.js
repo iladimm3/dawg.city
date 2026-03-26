@@ -191,12 +191,23 @@ async function analyze() {
     setLoading(true);
 
     try {
-        const recaptchaToken = await new Promise((resolve, reject) => {
-            grecaptcha.ready(() => {
-                grecaptcha.execute('6LdrpZIsAAAAAMxHRMOd9pKS0DOxV9Pp7yXPF8UV', { action: 'analyze' })
-                    .then(resolve).catch(reject);
+        let recaptchaToken = null;
+        try {
+            if (typeof grecaptcha === 'undefined' || !grecaptcha.ready) {
+                throw new Error('reCAPTCHA not loaded');
+            }
+            recaptchaToken = await new Promise((resolve, reject) => {
+                try {
+                    grecaptcha.ready(() => {
+                        grecaptcha.execute('6LdrpZIsAAAAAMxHRMOd9pKS0DOxV9Pp7yXPF8UV', { action: 'analyze' })
+                            .then(resolve).catch(reject);
+                    });
+                } catch (e) { reject(e); }
             });
-        });
+        } catch (e) {
+            showError('reCAPTCHA not available or invalid site key — please check configuration or disable adblockers.');
+            throw e;
+        }
 
         const response = await fetch('/api/analyze', {
             method: 'POST',
