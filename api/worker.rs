@@ -340,6 +340,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+    use bytes::Bytes as BytesCrate;
 
     #[test]
     fn encode_unreserved_chars_unchanged() {
@@ -368,5 +371,50 @@ mod tests {
             assert_eq!(extract_youtube_id(&u), Some(id.to_string()));
         }
         assert_eq!(extract_youtube_id("https://example.com/"), None);
+    }
+
+    #[tokio::test]
+    async fn try_fetch_image_success() {
+        // start mock server
+        let mock = MockServer::start().await;
+        let body = vec![0u8; 128];
+        Mock::given(method("GET"))
+            .and(path("/img.png"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .insert_header("content-type", "image/png")
+                    .set_body_bytes(body.clone()),
+            )
+            .mount(&mock)
+            .await;
+
+        let client = reqwest::Client::new();
+        let url = format!("{}/img.png", mock.uri());
+        let res = try_fetch_image(&client, &url).await.expect("should not error");
+        assert!(res.is_some());
+        let (bytes_res, content_type) = res.unwrap();
+        assert_eq!(content_type, "image/png");
+        assert_eq!(bytes_res.len(), 128);
+    }
+
+    #[tokio::test]
+    async fn fetch_thumbnail_direct_image() {
+        let mock = MockServer::start().await;
+        let body = vec![1u8; 200];
+        Mock::given(method("GET"))
+            .and(path("/thumb.jpg"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .insert_header("content-type", "image/jpeg")
+                    .set_body_bytes(body.clone()),
+            )
+            .mount(&mock)
+            .await;
+
+        let client = reqwest::Client::new();
+        let url = format!("{}/thumb.jpg", mock.uri());
+        let (bytes, ct) = fetch_thumbnail_for_url(&client, &url).await.expect("should fetch thumbnail");
+        assert_eq!(ct, "image/jpeg");
+        assert_eq!(bytes.len(), 200);
     }
 }
