@@ -224,9 +224,9 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     };
 
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(10))
+        .timeout(std::time::Duration::from_secs(7))
         .build()
-        .unwrap_or_default();
+        .unwrap_or_else(|_| reqwest::Client::new());
 
     // ── reCAPTCHA verification ────────────────────────────────────
     let recaptcha_resp = client

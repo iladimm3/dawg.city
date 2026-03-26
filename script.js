@@ -223,11 +223,23 @@ async function analyze() {
             }
         }
 
-        const response = await fetch('/api/analyze', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ url, recaptcha_token: recaptchaToken })
-        });
+        const controller = new AbortController();
+        const fetchTimeout = setTimeout(() => controller.abort(), 12000);
+
+        let response;
+        try {
+            response = await fetch('/api/analyze', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ url, recaptcha_token: recaptchaToken }),
+                signal: controller.signal
+            });
+        } catch (e) {
+            if (e.name === 'AbortError') throw new Error('Request timed out — the server took too long. Please try again.');
+            throw e;
+        } finally {
+            clearTimeout(fetchTimeout);
+        }
 
         if (!response.ok) {
             const txt = await response.text();
