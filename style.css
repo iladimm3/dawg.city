@@ -44,7 +44,7 @@
             text-decoration: none;
         }
 
-        .nav-logo .dot { color: var(--blue); }
+        .nav-logo .dot { color: #F96715; }
 
         .nav-links {
             display: flex; align-items: center; gap: 4px; list-style: none;
