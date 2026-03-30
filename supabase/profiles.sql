@@ -71,8 +71,7 @@ BEGIN
 
     UPDATE public.profiles
     SET    scan_count_month = scan_count_month + 1,
-           scan_count       = scan_count + 1,
-           updated_at       = now()
+           scan_count       = scan_count + 1
     WHERE  id = p_user_id
     RETURNING scan_count_month INTO v_new_count;
 
