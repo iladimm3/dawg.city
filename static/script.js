@@ -246,7 +246,7 @@ async function analyze() {
         }
 
         const controller = new AbortController();
-        const fetchTimeout = setTimeout(() => controller.abort(), 12000);
+        const fetchTimeout = setTimeout(() => controller.abort(), 20000);
 
         let response;
         try {
@@ -273,27 +273,36 @@ async function analyze() {
         const data   = await response.json();
         const pct    = Math.round(data.confidence * 100);
         const inv    = 100 - pct;
-        const isFake = data.verdict === 'ai_generated';
+        const verdict = data.verdict; // 'ai_generated' | 'unsure' | 'likely_real'
+        const cls = verdict === 'ai_generated' ? 'fake' : verdict === 'unsure' ? 'unsure' : 'real';
+        const strokeColor = verdict === 'ai_generated' ? '#e53e3e' : verdict === 'unsure' ? '#d69e2e' : '#22a06b';
 
         resultThumb.src = data.thumbnail || '';
-        ringProgress.style.stroke = isFake ? '#e53e3e' : '#22a06b';
+        ringProgress.style.stroke = strokeColor;
         ringProgress.style.strokeDashoffset = CIRC;
         ringPct.textContent = `${pct}%`;
-        ringVerdict.textContent = isFake ? 'AI-Generated' : 'Likely Real';
-        ringVerdict.className = isFake ? 'fake' : 'real';
-        verdictBanner.className = `verdict-banner ${isFake ? 'fake' : 'real'}`;
-        verdictBanner.innerHTML = isFake
+        ringVerdict.textContent = verdict === 'ai_generated' ? 'AI-Generated' : verdict === 'unsure' ? 'Unsure' : 'Likely Real';
+        ringVerdict.className = cls;
+        verdictBanner.className = `verdict-banner ${cls}`;
+        verdictBanner.innerHTML = verdict === 'ai_generated'
             ? 'This input is <strong>likely to contain AI-generated or deepfake content</strong>'
+            : verdict === 'unsure'
+            ? 'This input is <strong>borderline — the result is inconclusive</strong>. Try a different link or check manually.'
             : 'This input is <strong>likely to be authentic, real content</strong>';
         primaryPct.textContent = `${pct}%`;
-        primaryPct.className = `score-pct-big ${isFake ? 'fake' : 'real'}`;
-        primaryLabel.textContent = isFake ? 'AI-Generated Content' : 'Real / Authentic Content';
-        primaryBar.className = `score-bar-fill ${isFake ? 'fake' : 'real'}`;
+        primaryPct.className = `score-pct-big ${cls}`;
+        primaryLabel.textContent = verdict === 'ai_generated' ? 'AI-Generated Content' : verdict === 'unsure' ? 'Uncertain' : 'Real / Authentic Content';
+        primaryBar.className = `score-bar-fill ${cls}`;
         primaryBar.style.width = '0%';
         secondaryPct.textContent = `${inv}%`;
-        secondaryLabel.textContent = isFake ? 'Real Content' : 'AI-Generated';
+        secondaryLabel.textContent = verdict === 'ai_generated' ? 'Real Content' : 'AI-Generated';
         secondaryBar.style.width = '0%';
         resultDetails.textContent = data.details;
+
+        const toolsEl = document.getElementById('tools-label');
+        if (toolsEl && data.tools_used) {
+            toolsEl.textContent = 'Multi-tool analysis \u00B7 ' + data.tools_used.join(' + ');
+        }
 
         resultCard.classList.remove('hidden');
         setTimeout(() => {

@@ -317,36 +317,8 @@ pub async fn handler(headers: HeaderMap, body: String) -> impl IntoResponse {
         Err(_) => return error_response("Missing SIGHTENGINE_API_SECRET"),
     };
 
-    let se_start = Instant::now();
-    let result = match client
-        .get("https://api.sightengine.com/1.0/check.json")
-        .query(&[
-            ("url",        thumbnail.as_str()),
-            ("models",     "genai"),
-            ("api_user",   api_user.as_str()),
-            ("api_secret", api_secret.as_str()),
-        ])
-        .send()
-        .await
-    {
-        Ok(r) => match r.json::<serde_json::Value>().await {
-            Ok(v) => v,
-            Err(_) => return error_response("Failed to parse Sightengine response"),
-        },
-        Err(_) => return error_response("Sightengine request failed"),
-    };
-    let se_ms = se_start.elapsed().as_millis() as u64;
-
-    if result["status"] != "success" {
-        let err = result.get("error")
-            .and_then(|e| e.get("message"))
-            .and_then(|m| m.as_str())
-            .unwrap_or("Unknown Sightengine error");
-        eprintln!("{}", json!({"event":"sightengine_error","request_id":request_id,"error":err,"sightengine_ms":se_ms,"ms":req_start.elapsed().as_millis() as u64}));
-        return error_response(err);
-    }
-
-    let ai_score = result["type"]["ai_generated"].as_f64().unwrap_or(0.0) as f32;
+    let deepware_token = std::env::var("DEEPWARE_AUTH_TOKEN").ok();
+    let hf_token = std::env::var("HF_TOKEN").ok();
 
     let platform_name = match &platform {
         Platform::YouTube(_)   => "YouTube",
@@ -355,19 +327,94 @@ pub async fn handler(headers: HeaderMap, body: String) -> impl IntoResponse {
         Platform::Instagram(_) => "Instagram",
     };
 
-    let (verdict, confidence, details) = if ai_score >= 0.5 {
+    // ── Longer-timeout client for external AI calls ───────────────
+    let ai_client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .unwrap_or_else(|_| client.clone());
+
+    // ── Parallel multi-tool analysis ──────────────────────────────
+    let se_fut = call_sightengine(&ai_client, &thumbnail, &api_user, &api_secret);
+    let dw_fut = call_deepware(&ai_client, &url, deepware_token.as_deref());
+    let hf_fut = call_huggingface(&ai_client, &thumbnail, hf_token.as_deref());
+
+    let (se_result, dw_result, hf_result) = tokio::join!(se_fut, dw_fut, hf_fut);
+
+    // ── Collect scores and tool names ─────────────────────────────
+    let mut scores: Vec<(f64, f64)> = Vec::new(); // (score, weight)
+    let mut tools_used: Vec<&str> = Vec::new();
+    let mut tool_errors: Vec<String> = Vec::new();
+
+    match se_result {
+        Ok(score) => {
+            scores.push((score, 0.4));
+            tools_used.push("Sightengine");
+        }
+        Err(e) => tool_errors.push(format!("Sightengine: {}", e)),
+    }
+
+    match dw_result {
+        Ok(score) => {
+            scores.push((score, 0.4));
+            tools_used.push("Deepware");
+        }
+        Err(e) => tool_errors.push(format!("Deepware: {}", e)),
+    }
+
+    match hf_result {
+        Ok(Some(score)) => {
+            scores.push((score, 0.2));
+            tools_used.push("HF");
+        }
+        Ok(None) => {} // HF not configured — skip silently
+        Err(e) => tool_errors.push(format!("HF: {}", e)),
+    }
+
+    if scores.is_empty() {
+        let err_detail = tool_errors.join("; ");
+        eprintln!("{}", json!({"event":"all_tools_failed","request_id":request_id,"errors":err_detail}));
+        return error_response("All detection tools failed. Please try again later.");
+    }
+
+    // ── Weighted average (re-normalize to available tools) ────────
+    let total_weight: f64 = scores.iter().map(|(_, w)| w).sum();
+    let combined_score: f64 = scores.iter().map(|(s, w)| s * w).sum::<f64>() / total_weight;
+
+    let tool_count = tools_used.len();
+    let plural = if tool_count > 1 { "s" } else { "" };
+
+    let (verdict, confidence, details) = if combined_score > 0.65 {
         (
             "ai_generated",
-            ai_score,
-            format!("Fake — AI generation probability: {:.0}% (scanned {} thumbnail).", ai_score * 100.0, platform_name),
+            combined_score,
+            format!(
+                "Fake — Combined AI probability: {:.0}% across {} tool{}. Scanned {} thumbnail.",
+                combined_score * 100.0, tool_count, plural, platform_name
+            ),
+        )
+    } else if combined_score < 0.35 {
+        (
+            "likely_real",
+            1.0 - combined_score,
+            format!(
+                "Real — Combined AI probability: {:.0}% across {} tool{}. Scanned {} thumbnail.",
+                combined_score * 100.0, tool_count, plural, platform_name
+            ),
         )
     } else {
         (
-            "likely_real",
-            1.0 - ai_score,
-            format!("Real — AI generation probability only {:.0}% (scanned {} thumbnail).", ai_score * 100.0, platform_name),
+            "unsure",
+            combined_score,
+            format!(
+                "Inconclusive — Combined AI probability: {:.0}% across {} tool{}. Scanned {} thumbnail. The result is uncertain; try a different link or check manually.",
+                combined_score * 100.0, tool_count, plural, platform_name
+            ),
         )
     };
+
+    if !tool_errors.is_empty() {
+        eprintln!("{}", json!({"event":"partial_tool_failure","request_id":request_id,"errors":tool_errors.join("; ")}));
+    }
 
     eprintln!("{}", json!({
         "event":          "scan_complete",
@@ -375,8 +422,8 @@ pub async fn handler(headers: HeaderMap, body: String) -> impl IntoResponse {
         "user_id":        user_id,
         "platform":       platform_name,
         "verdict":        verdict,
-        "ai_score":       ai_score,
-        "sightengine_ms": se_ms,
+        "combined_score": combined_score,
+        "tools_used":     tools_used,
         "ms":             req_start.elapsed().as_millis() as u64
     }));
 
@@ -387,9 +434,178 @@ pub async fn handler(headers: HeaderMap, body: String) -> impl IntoResponse {
             "confidence": confidence,
             "details":    details,
             "thumbnail":  thumbnail,
-            "platform":   platform_name
+            "platform":   platform_name,
+            "tools_used": tools_used
         })),
     ).into_response()
+}
+
+// ── Sightengine ───────────────────────────────────────────────────
+async fn call_sightengine(
+    client: &reqwest::Client,
+    thumbnail_url: &str,
+    api_user: &str,
+    api_secret: &str,
+) -> Result<f64, String> {
+    let result = client
+        .get("https://api.sightengine.com/1.0/check.json")
+        .query(&[
+            ("url",        thumbnail_url),
+            ("models",     "genai"),
+            ("api_user",   api_user),
+            ("api_secret", api_secret),
+        ])
+        .send()
+        .await
+        .map_err(|e| format!("request failed: {}", e))?
+        .json::<serde_json::Value>()
+        .await
+        .map_err(|e| format!("parse failed: {}", e))?;
+
+    if result["status"] != "success" {
+        let err = result.get("error")
+            .and_then(|e| e.get("message"))
+            .and_then(|m| m.as_str())
+            .unwrap_or("unknown error");
+        return Err(err.to_string());
+    }
+
+    Ok(result["type"]["ai_generated"].as_f64().unwrap_or(0.0))
+}
+
+// ── Deepware (multipart/form-data with field "videourl") ──────────
+async fn call_deepware(
+    client: &reqwest::Client,
+    video_url: &str,
+    token: Option<&str>,
+) -> Result<f64, String> {
+    let token = match token {
+        Some(t) if !t.is_empty() => t,
+        _ => return Err("not configured".to_string()),
+    };
+
+    let form = reqwest::multipart::Form::new()
+        .text("videourl", video_url.to_string());
+
+    let resp = client
+        .post("https://api.deepware.ai/api/v1/url/scan")
+        .header("X-Deepware-Authentication", token)
+        .multipart(form)
+        .send()
+        .await
+        .map_err(|e| format!("request failed: {}", e))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("HTTP {} — {}", status, body));
+    }
+
+    let data = resp
+        .json::<serde_json::Value>()
+        .await
+        .map_err(|e| format!("parse failed: {}", e))?;
+
+    // Deepware returns various result shapes — try common paths
+    if let Some(score) = data["data"]["deepfake_probability"].as_f64() {
+        return Ok(score);
+    }
+    if let Some(score) = data["result"]["deepfake_probability"].as_f64() {
+        return Ok(score);
+    }
+    if let Some(score) = data["deepfake_probability"].as_f64() {
+        return Ok(score);
+    }
+    if let Some(label) = data["result"]["label"].as_str() {
+        let conf = data["result"]["confidence"].as_f64().unwrap_or(0.5);
+        return match label.to_lowercase().as_str() {
+            "fake" | "deepfake" => Ok(conf),
+            "real" | "authentic" => Ok(1.0 - conf),
+            _ => Ok(0.5),
+        };
+    }
+
+    Err("unexpected response format".to_string())
+}
+
+// ── Hugging Face (optional — labels "Deepfake" / "Real") ─────────
+async fn call_huggingface(
+    client: &reqwest::Client,
+    thumbnail_url: &str,
+    token: Option<&str>,
+) -> Result<Option<f64>, String> {
+    let token = match token {
+        Some(t) if !t.is_empty() => t,
+        _ => return Ok(None), // not configured — not an error
+    };
+
+    // Fetch thumbnail bytes for binary upload
+    let img_bytes = client
+        .get(thumbnail_url)
+        .send()
+        .await
+        .map_err(|e| format!("thumbnail fetch failed: {}", e))?
+        .bytes()
+        .await
+        .map_err(|e| format!("thumbnail read failed: {}", e))?;
+
+    let resp = client
+        .post("https://api-inference.huggingface.co/models/prithivMLmods/Deep-Fake-Detector-v2-Model")
+        .header("Authorization", format!("Bearer {}", token))
+        .header("Content-Type", "application/octet-stream")
+        .body(img_bytes)
+        .send()
+        .await
+        .map_err(|e| format!("request failed: {}", e))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("HTTP {} — {}", status, body));
+    }
+
+    let data = resp
+        .json::<serde_json::Value>()
+        .await
+        .map_err(|e| format!("parse failed: {}", e))?;
+
+    // HF image-classification: [{label, score}, ...] or [[{label, score}, ...]]
+    // Model returns "Deepfake" / "Real" labels
+    if let Some(arr) = data.as_array() {
+        for item in arr {
+            let label = item["label"].as_str().unwrap_or("").to_lowercase();
+            let score = item["score"].as_f64().unwrap_or(0.0);
+            if label.contains("fake") || label.contains("ai") || label.contains("synthetic") || label.contains("deepfake") {
+                return Ok(Some(score));
+            }
+        }
+        for item in arr {
+            let label = item["label"].as_str().unwrap_or("").to_lowercase();
+            let score = item["score"].as_f64().unwrap_or(0.0);
+            if label.contains("real") || label.contains("authentic") || label.contains("human") {
+                return Ok(Some(1.0 - score));
+            }
+        }
+    }
+    // Nested array format [[{label, score}]]
+    if let Some(outer) = data.get(0).and_then(|v| v.as_array()) {
+        for item in outer {
+            let label = item["label"].as_str().unwrap_or("").to_lowercase();
+            let score = item["score"].as_f64().unwrap_or(0.0);
+            if label.contains("fake") || label.contains("deepfake") {
+                return Ok(Some(score));
+            }
+        }
+        for item in outer {
+            let label = item["label"].as_str().unwrap_or("").to_lowercase();
+            let score = item["score"].as_f64().unwrap_or(0.0);
+            if label.contains("real") {
+                return Ok(Some(1.0 - score));
+            }
+        }
+    }
+
+    Err("could not parse classification result".to_string())
 }
 
 fn error_response(msg: &str) -> axum::response::Response {

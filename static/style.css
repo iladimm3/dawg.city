@@ -587,6 +587,7 @@
 
         #ring-verdict.fake { color: var(--red); }
         #ring-verdict.real { color: var(--green); }
+        #ring-verdict.unsure { color: #d69e2e; }
 
         /* Verdict banner */
         .verdict-banner {
@@ -601,6 +602,7 @@
 
         .verdict-banner.fake { background: #fff5f5; border: 1px solid #fecaca; color: #c53030; }
         .verdict-banner.real { background: #f0fff8; border: 1px solid #9ae6b4; color: #276749; }
+        .verdict-banner.unsure { background: #fffff0; border: 1px solid #fefcbf; color: #975a16; }
         .verdict-banner strong { font-weight: 700; }
 
         /* Score rows */
@@ -623,6 +625,7 @@
         }
         .score-pct-big.fake { color: var(--red); }
         .score-pct-big.real { color: var(--green); }
+        .score-pct-big.unsure { color: #d69e2e; }
         .score-pct-big.neutral { color: var(--text-3); }
 
         .score-meta-right { text-align: right; }
@@ -639,11 +642,19 @@
         }
         .score-bar-fill.fake { background: var(--red); }
         .score-bar-fill.real { background: var(--green); }
+        .score-bar-fill.unsure { background: #d69e2e; }
         .score-bar-fill.neutral { background: #cbd5e1; }
 
         #result-details {
             font-size: 0.82rem; color: var(--text-3); line-height: 1.6;
             text-align: center; padding: 0 8px;
+        }
+
+        .tools-label {
+            font-size: 0.72rem;
+            color: var(--text-3);
+            text-align: center;
+            margin-top: 6px;
         }
 
         /* Powered by */
