@@ -55,8 +55,7 @@ function applyPlanUI() {
     document.querySelectorAll('.ad-wrap, .adsbygoogle').forEach(el => {
         el.style.display = isPaid() ? 'none' : '';
     });
-    const upgradeBanner = document.querySelector('.upgrade-wrap');
-    if (upgradeBanner) upgradeBanner.style.display = isPaid() ? 'none' : '';
+
 
     const scanCountEl = document.getElementById('nav-scan-num');
     if (scanCountEl) {
@@ -192,8 +191,7 @@ async function analyze() {
     if (currentUser && userPlan !== 'pro') {
         const limit = SCAN_LIMITS[userPlan] ?? SCAN_LIMITS.free;
         if (scanCountMonth >= limit) {
-            showError(`You've used all ${limit} scans this month. Upgrade for more!`);
-            openUpgradeModal();
+            showError(`You've used all ${limit} scans this month.`);
             return;
         }
     }
@@ -319,8 +317,8 @@ async function analyze() {
     finally { setLoading(false); }
 }
 
-btn.addEventListener('click', analyze);
-input.addEventListener('keypress', e => { if (e.key === 'Enter') analyze(); });
+btn.addEventListener('click', showConsentModal);
+input.addEventListener('keypress', e => { if (e.key === 'Enter') showConsentModal(); });
 input.addEventListener('input', () => { document.getElementById('mono-section').classList.add('hidden'); });
 
 // ── UI helpers ─────────────────────────────────────────────────────
@@ -333,9 +331,35 @@ function scanAnother() {
     input.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setTimeout(() => input.focus(), 400);
 }
-function openUpgradeModal() { document.getElementById('upgrade-modal').classList.add('open'); document.body.style.overflow = 'hidden'; }
-function closeUpgradeModal() { document.getElementById('upgrade-modal').classList.remove('open'); document.body.style.overflow = ''; }
-function handleModalClick(e) { if (e.target === document.getElementById('upgrade-modal')) closeUpgradeModal(); }
+// ── Consent modal ────────────────────────────────────────────────────────
+function showConsentModal() {
+    const url = input.value.trim();
+    if (!url) { input.focus(); return; }
+    const overlay = document.getElementById('consent-overlay');
+    const card = document.getElementById('consent-card');
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'all';
+    card.style.transform = 'translateY(0) scale(1)';
+    document.getElementById('consent-error').style.display = 'none';
+    document.body.style.overflow = 'hidden';
+}
+function closeConsentModal() {
+    const overlay = document.getElementById('consent-overlay');
+    const card = document.getElementById('consent-card');
+    overlay.style.opacity = '0';
+    overlay.style.pointerEvents = 'none';
+    card.style.transform = 'translateY(16px) scale(0.97)';
+    document.body.style.overflow = '';
+}
+function consentAndAnalyze() {
+    const cb = document.getElementById('consent-checkbox');
+    if (!cb.checked) {
+        document.getElementById('consent-error').style.display = 'block';
+        return;
+    }
+    closeConsentModal();
+    analyze();
+}
 function submitEmail() {
     const emailInput = document.getElementById('email-input');
     if (!emailInput) return;
@@ -388,16 +412,23 @@ window.closeAuth        = () => { document.getElementById('signin-overlay').clas
 window.handleAuthClick  = (e, id) => { if (e.target === document.getElementById(id)) window.closeAuth(); };
 window.signInWithGoogle = signInWithGoogle;
 window.signOut          = signOut;
-window.openUpgradeModal = openUpgradeModal;
-window.closeUpgradeModal= closeUpgradeModal;
+window.showConsentModal  = showConsentModal;
+window.closeConsentModal = closeConsentModal;
+window.consentAndAnalyze = consentAndAnalyze;
 window.acceptCookies    = acceptCookies;
 window.dismissCookies   = dismissCookies;
 window.submitEmail      = submitEmail;
 window.scanAnother      = scanAnother;
-window.handleModalClick = handleModalClick;
+
 window.fillExample      = fillExample;
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeUpgradeModal(); window.closeAuth(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeConsentModal(); window.closeAuth(); } });
+
+// Wire consent modal buttons
+document.getElementById('consent-continue-btn').addEventListener('click', consentAndAnalyze);
+document.getElementById('consent-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeConsentModal();
+});
 
 // ── AdSense init (deferred to avoid width=0 on hidden elements) ────
 function pushAd(el) {

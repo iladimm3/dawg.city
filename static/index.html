@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dawg City — Free AI & Deepfake Video Detector | YouTube, TikTok, X</title>
-    <meta name="description" content="Instantly detect AI-generated and deepfake videos from YouTube, TikTok and X (Twitter). Free, no signup. Paste a link and get an AI confidence score in seconds.">
+    <meta name="description" content="Dawg.city is the fastest way to scan Ai video links (that actually gets accurate results) instead of guessing, uses multiple scanning tools to do the scan for you. Here's how it works, you simply paste in video link and dawg.city will generate a result in seconds.">
     <meta name="keywords" content="AI video detector, deepfake detector, AI generated video checker, fake video detector, YouTube deepfake, TikTok AI detection, deepfake checker free, AI content detector, synthetic media detector, deepfake video scanner">
     <meta name="author" content="dawg.city">
     <meta name="robots" content="index, follow">
@@ -96,7 +96,7 @@
           "name": "Is dawg.city free to use?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes — scanning YouTube, TikTok, and X (Twitter) URLs is completely free with no account required. Paid plans ($9/month Starter and $19/month Pro) unlock full video upload, batch scanning, and API access."
+            "text": "Yes — dawg.city is 100% free forever. No paid plans, no account required. Just paste a link and scan."
           }
         },
         {
@@ -123,23 +123,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="/style.css">
-    <style>
-        .scan-disclaimer {
-            margin-top: 10px;
-            font-size: 0.78rem;
-            color: #64748b;
-            text-align: center;
-            line-height: 1.55;
-            padding: 0 4px;
-        }
-        .scan-disclaimer a {
-            color: #2563eb;
-            text-decoration: none;
-        }
-        .scan-disclaimer a:hover {
-            text-decoration: underline;
-        }
-    </style>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="alternate icon" href="/favicon.ico">
 </head>
@@ -186,9 +169,6 @@
                 <div id="btn-spinner" class="spinner hidden"></div>
             </button>
         </div>
-        <p class="scan-disclaimer">
-            We only analyze public links from supported platforms (YouTube, TikTok, X, Instagram). Your video thumbnail is sent in real-time to Sightengine&#8217;s AI model for deepfake detection and is not stored anywhere. <a href="/privacy.html">See our Privacy Policy for details.</a>
-        </p>
     </div>
 </section>
 
@@ -306,18 +286,16 @@
     <!-- MONETIZATION SECTION — shown after result -->
     <div id="mono-section" class="mono-section hidden">
 
-        <!-- Upgrade CTA -->
-        <div class="upgrade-wrap">
-            <button onclick="openUpgradeModal()" class="upgrade-btn">
-                <div class="upgrade-left">
-                    <span class="upgrade-icon">⚡</span>
-                    <div>
-                        <div class="upgrade-title">Upgrade for Full Video Analysis</div>
-                        <div class="upgrade-desc">Batch scanning · Full video upload · API access · No limits</div>
-                    </div>
+        <!-- Free forever message -->
+        <div style="max-width:640px;margin:0 auto;padding:0 24px 12px;">
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:20px 24px;text-align:center;">
+                <p style="font-size:1.05rem;font-weight:700;color:#1a2333;margin-bottom:6px;">dawg.city is 100% free forever ❤️</p>
+                <p style="font-size:0.88rem;color:#4a5568;line-height:1.6;margin-bottom:16px;">If this tool helped you spot an AI fake, consider buying me a coffee — it keeps the servers running and adds new features.</p>
+                <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+                    <a href="https://buymeacoffee.com/iladimm" target="_blank" rel="noopener" class="bmc-btn" style="font-size:0.95rem;padding:12px 24px;">☕ Buy Me a Coffee</a>
+                    <a href="https://ko-fi.com/dawgcity" target="_blank" rel="noopener" class="kofi-btn" style="font-size:0.95rem;padding:12px 24px;">❤️ Support on Ko-fi</a>
                 </div>
-                <span class="upgrade-badge">View Plans →</span>
-            </button>
+            </div>
         </div>
 
         <!-- Affiliate cards -->
@@ -472,7 +450,7 @@
                     <span class="faq-chevron">▼</span>
                 </button>
                 <div class="faq-a">
-                    Currently dawg.city supports YouTube videos, YouTube Shorts, and YouTube Live streams. Support for X (Twitter), TikTok, and direct video uploads is planned for future paid tiers.
+                    dawg.city supports YouTube videos, YouTube Shorts, YouTube Live streams, TikTok videos, and X (Twitter) posts. Simply paste any public link from these platforms and hit Scan.
                 </div>
             </div>
             <div class="faq-item">
@@ -481,7 +459,7 @@
                     <span class="faq-chevron">▼</span>
                 </button>
                 <div class="faq-a">
-                    Yes — scanning YouTube URLs is completely free with no account required. Paid plans ($9/month Starter and $19/month Pro) unlock full video upload, batch scanning, and API access.
+                    Yes — dawg.city is 100% free forever. No paid plans, no account required. Just paste a link and scan.
                 </div>
             </div>
             <div class="faq-item">
@@ -507,7 +485,7 @@
         <a href="https://buymeacoffee.com/iladimm" target="_blank" rel="noopener">☕ Support Us</a>
     </div>
     <div class="footer-copy">© 2026 dawg.city · Free AI-generated video detector</div>
-    <div class="footer-tos">By using this service, you agree to our <a href="/privacy.html">Terms of Services</a> and <a href="/privacy.html">Privacy Policy</a></div>
+    <div class="footer-tos">By using this service, you agree to our <a href="/terms.html">Terms of Service</a> and <a href="/privacy.html">Privacy Policy</a></div>
 </footer>
 
 <!-- SIGN IN MODAL -->
@@ -526,67 +504,18 @@
     </div>
 </div>
 
-<!-- UPGRADE MODAL -->
-<div id="upgrade-modal" class="modal-overlay" onclick="handleModalClick(event)">
-    <div class="modal">
-        <button class="modal-close" onclick="closeUpgradeModal()">✕</button>
-
-        <div class="modal-header">
-            <div class="modal-tag">⚡ Upgrade Dawg City</div>
-            <h2>Full Video Detection</h2>
-            <p>Go beyond thumbnails. Scan full videos, upload files, and get deeper AI analysis.</p>
-        </div>
-
-        <div class="plans-grid">
-            <!-- Starter -->
-            <div class="plan-card">
-                <div class="plan-name">Starter</div>
-                <div class="plan-price">
-                    <span class="plan-amount">$9</span>
-                    <span class="plan-period">/month</span>
-                </div>
-                <p class="plan-desc">Perfect for creators & journalists who need regular AI detection.</p>
-                <ul class="plan-features">
-                    <li><span class="feat-check">✓</span> 50 video scans/month</li>
-                    <li><span class="feat-check">✓</span> Full video upload (up to 100MB)</li>
-                    <li><span class="feat-check">✓</span> Detailed confidence report</li>
-                    <li><span class="feat-check">✓</span> No ads</li>
-                    <li><span class="feat-x">✗</span> Batch scanning</li>
-                    <li><span class="feat-x">✗</span> API access</li>
-                </ul>
-                <!-- PASTE YOUR STRIPE STARTER PAYMENT LINK BELOW -->
-                <a href="https://buy.stripe.com/fZu7sM2iJeCW2JBg0ofbq00" target="_blank" rel="noopener" class="plan-btn secondary">
-                    Get Starter →
-                </a>
-            </div>
-
-            <!-- Pro -->
-            <div class="plan-card popular">
-                <div class="popular-badge">Most Popular</div>
-                <div class="plan-name">Pro</div>
-                <div class="plan-price">
-                    <span class="plan-amount">$19</span>
-                    <span class="plan-period">/month</span>
-                </div>
-                <p class="plan-desc">For power users, researchers, and teams who need maximum coverage.</p>
-                <ul class="plan-features">
-                    <li><span class="feat-check">✓</span> Unlimited video scans</li>
-                    <li><span class="feat-check">✓</span> Full video upload (up to 500MB)</li>
-                    <li><span class="feat-check">✓</span> Detailed confidence report</li>
-                    <li><span class="feat-check">✓</span> No ads</li>
-                    <li><span class="feat-check">✓</span> Batch scanning (10 at once)</li>
-                    <li><span class="feat-check">✓</span> API access</li>
-                </ul>
-                <!-- PASTE YOUR STRIPE PRO PAYMENT LINK BELOW -->
-                <a href="https://buy.stripe.com/8x2cN66yZ0M66ZR6pOfbq01" target="_blank" rel="noopener" class="plan-btn primary">
-                    Get Pro →
-                </a>
-            </div>
-        </div>
-
-        <div class="modal-footer">
-            🔒 Secure payment via Stripe · Cancel anytime · <a href="/privacy.html">Privacy Policy</a>
-        </div>
+<!-- LEGAL CONSENT MODAL -->
+<div id="consent-overlay" style="position:fixed;inset:0;z-index:400;background:rgba(15,20,30,0.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity 0.2s ease;">
+    <div id="consent-card" style="background:#fff;border-radius:20px;width:100%;max-width:420px;box-shadow:0 24px 60px rgba(0,0,0,0.2);padding:36px 32px;transform:translateY(16px) scale(0.97);transition:transform 0.25s ease;position:relative;">
+        <h2 style="font-size:1.3rem;font-weight:800;text-align:center;margin-bottom:4px;color:#1a2333;font-family:var(--font,'Outfit',sans-serif);">Legal consent</h2>
+        <p style="font-size:0.88rem;color:#4a5568;text-align:center;margin-bottom:24px;font-family:var(--font,'Outfit',sans-serif);">Please read and accept the terms to continue</p>
+        <label style="display:flex;align-items:flex-start;gap:10px;font-size:0.85rem;color:#4a5568;cursor:pointer;margin-bottom:20px;font-family:var(--font,'Outfit',sans-serif);">
+            <input type="checkbox" id="consent-checkbox" checked style="width:18px;height:18px;accent-color:#1a6ef5;margin-top:2px;flex-shrink:0;cursor:pointer;">
+            <span>I agree to the <a href="/terms.html" style="color:#1a6ef5;text-decoration:none;font-weight:600;">Terms of Service</a> and <a href="/privacy.html" style="color:#1a6ef5;text-decoration:none;font-weight:600;">Privacy Policy</a></span>
+        </label>
+        <p id="consent-error" style="display:none;color:#e53e3e;font-size:0.82rem;text-align:center;margin-bottom:12px;font-family:var(--font,'Outfit',sans-serif);">You must agree to the terms to continue.</p>
+        <button id="consent-continue-btn" style="width:100%;padding:13px;background:linear-gradient(135deg,#1a6ef5,#1458d0);border:none;border-radius:10px;color:#fff;font-family:var(--font,'Outfit',sans-serif);font-size:1rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(26,110,245,0.3);transition:opacity 0.15s;">Continue ▶</button>
+        <p style="font-size:0.82rem;color:#8a96a8;text-align:center;margin-top:18px;font-family:var(--font,'Outfit',sans-serif);">Already have an account? <a href="/about.html" style="color:#1a6ef5;text-decoration:none;font-weight:600;">Sign in</a></p>
     </div>
 </div>
 
