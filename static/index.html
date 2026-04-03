@@ -15,7 +15,7 @@
     <meta property="og:url" content="https://dawg.city/">
     <meta property="og:title" content="Dawg City — Free AI & Deepfake Video Detector">
     <meta property="og:description" content="Instantly detect AI-generated and deepfake videos from YouTube, TikTok and X. Free, no signup required.">
-    <meta property="og:image" content="https://www.dawg.city/logo.png">
+    <meta property="og:image" content="https://dawg.city/logo.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="Dawg City">
@@ -26,7 +26,7 @@
     <meta name="twitter:site" content="@dawgcity">
     <meta name="twitter:title" content="Dawg City — Free AI & Deepfake Video Detector">
     <meta name="twitter:description" content="Instantly detect AI-generated and deepfake videos from YouTube, TikTok and X. Free, no signup.">
-    <meta name="twitter:image" content="https://www.dawg.city/logo.png">
+    <meta name="twitter:image" content="https://dawg.city/logo.png">
 
     <!-- WebApplication structured data -->
     <script type="application/ld+json">
@@ -136,6 +136,7 @@
     </a>
     <div style="display:flex;align-items:center;gap:8px;">
         <a href="/blog.html" class="nav-signin">Blog</a>
+        <button class="dark-toggle" id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">🌙</button>
         <!-- Logged out state -->
         <div id="nav-loggedout">
             <a href="#" class="nav-signin" onclick="openSignIn(event)">Sign in</a>
@@ -174,6 +175,18 @@
 
 <!-- ERROR -->
 <div id="error-banner" class="hidden"></div>
+
+<!-- RSS RIBBON BANNER - shows only while scanning -->
+<div id="rss-ribbon" class="hidden" style="background: linear-gradient(to right, #2563eb, #4f46e5); color: white; padding: 12px 0; font-size: 0.875rem; overflow: hidden;">
+  <div style="max-width: 896px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 0 24px;">
+    <div style="flex-shrink: 0; font-weight: 600; letter-spacing: 0.1em; font-size: 0.75rem; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 9999px;">
+      WHILE YOU WAIT
+    </div>
+    <div id="ticker-content" style="flex: 1; overflow: hidden;">
+      <div id="ticker-text" style="display: inline-flex; align-items: center; gap: 32px; transition: opacity 0.7s;"></div>
+    </div>
+  </div>
+</div>
 
 <!-- AD TOP -->
 <div style="background:var(--white);border-bottom:1px solid var(--border);">

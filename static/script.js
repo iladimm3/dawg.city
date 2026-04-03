@@ -1,3 +1,19 @@
+// ── Dark mode ──────────────────────────────────────────────────────
+function setDarkMode(enabled) {
+    document.documentElement.setAttribute('data-theme', enabled ? 'dark' : 'light');
+    const btn = document.getElementById('dark-toggle');
+    if (btn) btn.textContent = enabled ? '☀️' : '🌙';
+    localStorage.setItem('dark_mode', enabled ? '1' : '0');
+}
+(function initDarkMode() {
+    const saved = localStorage.getItem('dark_mode');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setDarkMode(saved !== null ? saved === '1' : prefersDark);
+})();
+function toggleDarkMode() {
+    setDarkMode(document.documentElement.getAttribute('data-theme') !== 'dark');
+}
+
 // ── Cookie banner ──────────────────────────────────────────────────
 function acceptCookies() {
     localStorage.setItem('cookie_consent', 'accepted');
@@ -149,6 +165,48 @@ async function initAuth() {
     if (session?.user) await onSignedIn(session.user);
 }
 
+// ── RSS Ribbon ticker ──────────────────────────────────────────────
+const TICKER_FACTS = [
+    "Over 124 million people now use AI video tools every month",
+    "AI-generated video volume grew 840% between 2024 and 2026",
+    "More than 50 new deepfake & AI video tools launched in the last 12 months",
+    "Deepfake-as-a-service platforms exploded in 2025",
+    "Top countries scanning for AI fakes right now: United States, China, India, Brazil, United Kingdom",
+    "91% of businesses now use video as a core marketing tool — many powered by AI",
+    "Every day, millions of AI videos are created worldwide",
+    "ByteDance's Seedance 2.0 is currently one of the hardest AI models to detect"
+];
+let _tickerFact = 0;
+let _tickerInterval = null;
+
+function startTicker() {
+    const ribbon = document.getElementById('rss-ribbon');
+    const tickerEl = document.getElementById('ticker-text');
+    if (!ribbon || !tickerEl) return;
+
+    ribbon.classList.remove('hidden');
+
+    _tickerFact = 0;
+    tickerEl.style.opacity = '1';
+    tickerEl.innerHTML = `<span style="white-space:nowrap">${TICKER_FACTS[0]}</span>`;
+
+    if (_tickerInterval) clearInterval(_tickerInterval);
+    _tickerInterval = setInterval(() => {
+        tickerEl.style.opacity = '0';
+        setTimeout(() => {
+            _tickerFact = (_tickerFact + 1) % TICKER_FACTS.length;
+            tickerEl.innerHTML = `<span style="white-space:nowrap">${TICKER_FACTS[_tickerFact]}</span>`;
+            tickerEl.style.opacity = '1';
+        }, 700);
+    }, 2800);
+}
+
+function stopTicker() {
+    const ribbon = document.getElementById('rss-ribbon');
+    if (_tickerInterval) { clearInterval(_tickerInterval); _tickerInterval = null; }
+    if (ribbon) ribbon.classList.add('hidden');
+}
+
 // ── Scan ───────────────────────────────────────────────────────────
 function setLoading(on) {
     btn.disabled = on;
@@ -211,6 +269,7 @@ async function analyze() {
     resultCard.classList.add('hidden');
     resultCard.classList.remove('visible');
     setLoading(true);
+    startTicker();
 
     try {
         let recaptchaToken = null;
@@ -323,7 +382,7 @@ async function analyze() {
         }
 
     } catch (err) { showError(err.message); }
-    finally { setLoading(false); }
+    finally { setLoading(false); stopTicker(); }
 }
 
 btn.addEventListener('click', showConsentModal);
