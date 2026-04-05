@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile — dailyspend.city</title>
+  <link rel="icon" href="https://dawg.city/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/shop.css">
+</head>
+<body>
+
+  <!-- ── Topbar ──────────────────────────────────────────────────────── -->
+  <header id="topbar">
+    <a class="logo" href="/">DAILY<span>SPEND</span>.CITY</a>
+    <div class="topbar-right" id="auth-area">
+      <!-- filled by auth.js -->
+    </div>
+  </header>
+
+  <!-- ── Profile content ─────────────────────────────────────────────── -->
+  <div class="profile-container" id="profile-root">
+    <div style="text-align:center;padding:60px;color:var(--muted)">Loading…</div>
+  </div>
+
+  <!-- ── Toast container ─────────────────────────────────────────────── -->
+  <div id="toast-container"></div>
+
+  <!-- ── Scripts ─────────────────────────────────────────────────────── -->
+  <script src="/js/auth.js"></script>
+  <script>
+    const API = 'https://dawg.city';
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '—';
+      return new Date(iso).toLocaleDateString(undefined, {
+        year: 'numeric', month: 'short', day: 'numeric'
+      });
+    }
+
+    function typeEmoji(type) {
+      const map = { badge: '🎖', cosmetic: '✨', coin_boost: '🔥', pass_upgrade: '⭐' };
+      return map[type] ?? '🛒';
+    }
+
+    async function fetchPurchases(token) {
+      try {
+        const res = await fetch(`${API}/api/me/coins`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return { balance: 0, transactions: [], purchases: [] };
+        return await res.json();
+      } catch (_) {
+        return { balance: 0, transactions: [], purchases: [] };
+      }
+    }
+
+    async function loadProfile() {
+      const root = document.getElementById('profile-root');
+
+      if (!Auth.isLoggedIn()) {
+        root.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🔒</div>
+            <p style="margin-bottom:16px">Log in with Discord to view your profile.</p>
+            <a class="btn btn-discord" href="${API}/api/auth/discord">Login with Discord</a>
+          </div>`;
+        return;
+      }
+
+      const token = Auth.getToken();
+      const [user, coinData] = await Promise.all([
+        Auth.getUser(),
+        fetchPurchases(token)
+      ]);
+
+      if (!user) {
+        root.innerHTML = `<div class="empty-state"><p>Failed to load profile.</p></div>`;
+        return;
+      }
+
+      document.title = `${user.username} — dailyspend.city`;
+
+      const avatarHtml = user.avatar_url
+        ? `<img src="${escHtml(user.avatar_url)}" alt="avatar">`
+        : `<div class="avatar-placeholder-lg">🐾</div>`;
+
+      const purchases = coinData.purchases ?? [];
+      const purchaseRows = purchases.length
+        ? purchases.map(p => `
+            <div class="purchase-item">
+              <div class="p-icon">${typeEmoji(p.item_type)}</div>
+              <div>
+                <div class="p-name">${escHtml(p.item_name ?? 'Unknown item')}</div>
+                <div class="p-date">${formatDate(p.purchased_at)}</div>
+              </div>
+              <div class="p-cost">−🪙 ${(p.cost_coins ?? 0).toLocaleString()}</div>
+            </div>`).join('')
+        : `<div class="no-purchases">No purchases yet. <a href="/" style="color:var(--accent)">Visit the shop →</a></div>`;
+
+      root.innerHTML = `
+        <!-- ── Profile hero ── -->
+        <div class="profile-card">
+          ${avatarHtml}
+          <div class="profile-info">
+            <h1>${escHtml(user.username)}</h1>
+            <div class="member-since">Member since ${formatDate(user.created_at)}</div>
+          </div>
+        </div>
+
+        <!-- ── Stats ── -->
+        <div class="stat-row">
+          <div class="stat-box">
+            <div class="stat-val" id="topbar-coins">${(user.coins ?? 0).toLocaleString()}</div>
+            <div class="stat-lbl">🪙 Coins</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val">${(user.xp ?? 0).toLocaleString()}</div>
+            <div class="stat-lbl">XP</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val">${user.streak_days ?? 0}</div>
+            <div class="stat-lbl">🔥 Streak</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val">${purchases.length}</div>
+            <div class="stat-lbl">Purchases</div>
+          </div>
+        </div>
+
+        <!-- ── Purchase history ── -->
+        <div class="purchase-card">
+          <h2>Purchase History</h2>
+          <div class="purchase-list">${purchaseRows}</div>
+        </div>
+
+        <!-- ── Actions ── -->
+        <div style="margin-top:24px;display:flex;gap:10px;flex-wrap:wrap">
+          <a class="btn btn-outline" href="https://dawg.city/profile.html">View Game Profile →</a>
+          <button class="btn btn-outline btn-danger" onclick="Auth.logout()">Logout</button>
+        </div>`;
+    }
+
+    document.addEventListener('DOMContentLoaded', loadProfile);
+  </script>
+</body>
+</html>

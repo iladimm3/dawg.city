@@ -1,0 +1,149 @@
+/* ── Game page layout ─────────────────────────────────────────────────── */
+body.game-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+body.game-page #topbar { flex-shrink: 0; }
+
+.game-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  overflow: hidden;
+}
+
+/* ── Iframe area ──────────────────────────────────────────────────────── */
+.iframe-wrap {
+  position: relative;
+  background: #000;
+  overflow: hidden;
+}
+.iframe-wrap iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* Fullscreen button */
+.btn-fullscreen {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.65);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+  transition: background var(--trans);
+}
+.btn-fullscreen:hover { background: var(--accent); color: #111; }
+
+/* ── Sidebar ──────────────────────────────────────────────────────────── */
+.game-sidebar {
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebar-section {
+  padding: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-section h3 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+/* score rows */
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.score-row:last-child { border-bottom: none; }
+.score-rank {
+  width: 22px;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: right;
+}
+.score-rank.gold   { color: #f5a623; }
+.score-rank.silver { color: #aaa; }
+.score-rank.bronze { color: #cd7f32; }
+.score-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.score-value { font-weight: 700; color: var(--accent); }
+
+/* submit score form */
+.score-form {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.score-form input[type="number"] {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--text);
+  font-size: 0.85rem;
+  outline: none;
+}
+.score-form input[type="number"]:focus { border-color: var(--accent); }
+
+/* ad slot */
+.ad-slot {
+  aspect-ratio: 300/250;
+  background: #1a1a1a;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 0.75rem;
+  overflow: hidden;
+}
+
+/* ── Related games (below layout) ────────────────────────────────────── */
+.related-section {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  padding: 10px 0 0;
+  background: var(--bg);
+  max-height: 200px;      /* just peeks above fold */
+}
+
+/* ── Responsive: stack on small screens ───────────────────────────────── */
+@media (max-width: 768px) {
+  body.game-page { height: auto; overflow: auto; }
+
+  .game-layout {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .iframe-wrap {
+    aspect-ratio: 16/9;
+    height: auto;
+  }
+
+  .game-sidebar { border-left: none; border-top: 1px solid var(--border); }
+}

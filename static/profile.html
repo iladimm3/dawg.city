@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile — dawg.city</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/base.css">
+  <style>
+    .profile-container { max-width: 720px; margin: 0 auto; padding: 24px 20px; }
+
+    /* ── Hero card ─────────────────────────────────────────────────── */
+    .profile-card {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .profile-card img {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .profile-card .avatar-placeholder {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: #333; border: 2px solid var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; flex-shrink: 0;
+    }
+    .profile-info { flex: 1; }
+    .profile-info h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: 4px; }
+    .profile-info .member-since { color: var(--muted); font-size: 0.82rem; }
+
+    /* ── Stat row ──────────────────────────────────────────────────── */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      text-align: center;
+    }
+    .stat-box .stat-val {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .stat-box .stat-lbl {
+      margin-top: 4px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Battle pass progress ──────────────────────────────────────── */
+    .bp-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    .bp-card h2 { font-size: 0.85rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--accent); margin-bottom: 12px; }
+    .bp-progress-bar {
+      height: 10px;
+      background: var(--bg);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 6px;
+      border: 1px solid var(--border);
+    }
+    .bp-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #f5c04b);
+      border-radius: 10px;
+      transition: width 0.4s ease;
+    }
+    .bp-meta { font-size: 0.8rem; color: var(--muted); }
+    .bp-tier-badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #111;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 6px;
+    }
+
+    /* ── Coin history ──────────────────────────────────────────────── */
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      font-size: 0.86rem;
+    }
+    .history-table th {
+      padding: 9px 12px;
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      background: #1e1e1e;
+      border-bottom: 1px solid var(--border);
+    }
+    .history-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); }
+    .history-table tr:last-child td { border-bottom: none; }
+    .hist-pos { color: #4caf50; font-weight: 700; }
+    .hist-neg { color: var(--accent-2); font-weight: 700; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Topbar ──────────────────────────────────────────────────────── -->
+  <header id="topbar">
+    <a class="logo" href="/">DAWG.CITY</a>
+    <div class="topbar-right" id="auth-area"></div>
+  </header>
+
+  <!-- ── Content ─────────────────────────────────────────────────────── -->
+  <main class="profile-container" id="profile-main">
+    <div class="muted" style="padding:40px 0;text-align:center">Loading profile…</div>
+  </main>
+
+  <!-- ── Scripts ─────────────────────────────────────────────────────── -->
+  <script src="/js/auth.js"></script>
+  <script src="/js/coins.js"></script>
+
+  <script>
+    const API = 'https://dawg.city';
+
+    async function loadProfile() {
+      // Require login
+      if (!Auth.isLoggedIn()) {
+        Auth.requireLogin();
+        return;
+      }
+
+      const token = Auth.getToken();
+      const main  = document.getElementById('profile-main');
+
+      // Fetch user + coin data in parallel
+      const [userRes, coinsData, bpRes] = await Promise.all([
+        fetch(`${API}/api/me`,         { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : null),
+        Coins.fetchBalance(),
+        fetch(`${API}/api/battlepass`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : null),
+      ]);
+
+      if (!userRes) {
+        main.innerHTML = '<div class="muted" style="padding:40px;text-align:center">Could not load profile.</div>';
+        return;
+      }
+
+      const user = userRes;
+      const avatarEl = user.avatar_url
+        ? `<img src="${escHtml(user.avatar_url)}" alt="${escHtml(user.username)}">`
+        : `<div class="avatar-placeholder">🐾</div>`;
+
+      const joinDate = new Date(user.created_at).toLocaleDateString(undefined, { year:'numeric', month:'long' });
+
+      // Battle pass progress
+      let bpHtml = '';
+      if (bpRes && bpRes.season) {
+        const bp      = bpRes;
+        const tier    = bp.progress?.current_tier ?? 0;
+        const xp      = bp.xp ?? 0;
+        const xpPerTier = 500;
+        const xpIntoTier = xp % xpPerTier;
+        const pct    = Math.round((xpIntoTier / xpPerTier) * 100);
+        const isPrem = bp.progress?.is_premium ?? false;
+
+        bpHtml = `
+          <div class="bp-card">
+            <h2>Battle Pass — ${escHtml(bp.season.name)}
+              ${isPrem ? '<span class="bp-tier-badge">Premium</span>' : ''}
+            </h2>
+            <div class="bp-progress-bar"><div class="bp-fill" style="width:${pct}%"></div></div>
+            <p class="bp-meta">Tier ${tier} / 30 &nbsp;·&nbsp; ${xp.toLocaleString()} XP total</p>
+          </div>`;
+      }
+
+      // Coin history table
+      let histHtml = '<div class="muted" style="padding:12px 0">No coin history yet.</div>';
+      if (coinsData?.history?.length) {
+        histHtml = `
+          <table class="history-table">
+            <thead><tr><th>Amount</th><th>Reason</th><th>Date</th></tr></thead>
+            <tbody>
+              ${coinsData.history.map(h => `
+                <tr>
+                  <td class="${h.amount >= 0 ? 'hist-pos' : 'hist-neg'}">${h.amount >= 0 ? '+' : ''}${h.amount} 🪙</td>
+                  <td>${escHtml(h.reason)}</td>
+                  <td class="muted">${new Date(h.created_at).toLocaleDateString()}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>`;
+      }
+
+      main.innerHTML = `
+        <div class="profile-card">
+          ${avatarEl}
+          <div class="profile-info">
+            <h1>${escHtml(user.username)}</h1>
+            <p class="member-since">Member since ${joinDate}</p>
+          </div>
+          <button class="btn btn-outline" onclick="Auth.logout()">Log out</button>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-box">
+            <div class="stat-val">🪙 ${(user.coins ?? 0).toLocaleString()}</div>
+            <div class="stat-lbl">Coins</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val">${(user.xp ?? 0).toLocaleString()}</div>
+            <div class="stat-lbl">XP</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val">🔥 ${user.streak_days ?? 0}</div>
+            <div class="stat-lbl">Day streak</div>
+          </div>
+        </div>
+
+        ${bpHtml}
+
+        <p class="section-label" style="padding-left:0">Coin History</p>
+        ${histHtml}
+      `;
+    }
+
+    function escHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    document.addEventListener('DOMContentLoaded', loadProfile);
+  </script>
+</body>
+</html>

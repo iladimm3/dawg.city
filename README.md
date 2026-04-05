@@ -1,138 +1,184 @@
-# dawg.city — AI video deepfake detection
+# dawg.city
 
-[![CI](https://github.com/iladimm3/dawg.city/actions/workflows/worker-ci.yml/badge.svg?branch=main)](https://github.com/iladimm3/dawg.city/actions/workflows/worker-ci.yml)
-[![Secret Scan](https://github.com/iladimm3/dawg.city/actions/workflows/secret-scan.yml/badge.svg?branch=main)](https://github.com/iladimm3/dawg.city/actions/workflows/secret-scan.yml)
+Free unblocked games portal with a gamified coin economy — built for school networks.
+
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Lightweight production platform to detect AI-generated video frames using a static frontend and a Rust HTTP server deployed on Railway.
+---
 
-Overview
---------
-`dawg.city` provides fast, opinionated detection for social video platforms (YouTube, TikTok, X/Twitter, Instagram) using a static site (Tailwind + Vanilla JS) and an Axum-based Rust server deployed on Railway.
+## What it is
 
-Badges
-------
-- **CI**: status for core Rust checks and tests (see workflow `worker-ci.yml`)
-- **Secret Scan**: automated repository secret scanning (truffleHog + detect-secrets)
-- **License**: MIT
+**dawg.city** — Play hundreds of free games, earn coins just by playing, climb leaderboards, and unlock rewards through a battle pass.
 
-Key features
-- Minimal, fast static frontend
-- Axum HTTP server with `POST /api/analyze` and `POST /api/webhook` endpoints
-- Static file serving via `tower-http::ServeDir`
-- Asynchronous processing via job queue + worker (Supabase-backed)
-- Sightengine AI detection for thumbnail/frame scoring
-- Supabase for auth and quota tracking, Stripe for billing
-- Dockerized deployment on Railway
+**dailyspend.city** — The companion coin shop. Spend earned coins on badges, boosts, and pass upgrades.
 
-Quick start
------------
-1. Fork or clone the repository.
-2. Install Rust (1.77+).
-3. Set required environment variables (see below).
-4. Run locally:
-   ```bash
-   PORT=3000 cargo run --bin server
-   ```
-5. Open `http://localhost:3000/`.
+Both sites run on a single Rust server with a shared PostgreSQL database. User accounts are Discord OAuth — no email required.
 
-Deploy to Railway
------------------
-**Server service:**
-1. Create a new Railway project and link this repo.
-2. Railway will auto-detect the `Dockerfile` and build the `server` binary.
-3. Set all required environment variables (see below). `PORT` is injected automatically.
-4. The healthcheck is configured at `GET /health` via `railway.toml`.
+---
 
-**Worker service:**
-1. Add a second service in the same Railway project.
-2. Point it to `Dockerfile.worker`.
-3. Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SIGHTENGINE_API_USER`, `SIGHTENGINE_API_SECRET`.
-4. No port needed — the worker is a long-lived polling process.
+## Stack
 
-**Docker (manual):**
-```bash
-docker build -t dawg-city .
-docker run -p 3000:3000 -e PORT=3000 \
-  -e RECAPTCHA_SECRET=... \
-  -e SUPABASE_URL=... \
-  -e SUPABASE_SERVICE_ROLE_KEY=... \
-  -e STRIPE_WEBHOOK_SECRET=... \
-  -e SIGHTENGINE_API_USER=... \
-  -e SIGHTENGINE_API_SECRET=... \
-  dawg-city
-```
+| Layer | Technology |
+|---|---|
+| Frontend | Plain HTML + CSS + JS (no framework) |
+| Backend | Rust (Axum) |
+| Database | PostgreSQL (Supabase) |
+| Auth | Discord OAuth 2.0 |
+| CDN / DNS | Cloudflare |
+| Deploy | Railway (Docker) |
 
-Captures d'écran
-----------------
-Voici quelques captures d'écran (remplacez par vos propres images si vous préférez) :
+---
 
-![Dashboard placeholder](https://placehold.co/800x450?text=Dashboard)
+## Project structure
 
-![Scan result placeholder](https://placehold.co/800x450?text=Scan+Result)
-
-Environment variables
----------------------
-Set these in Railway's service variables or in your local environment.
-
-| Variable | Required | Used By | Purpose |
-|---|---|---|---|
-| `PORT` | auto | server | Railway injects automatically |
-| `ALLOWED_ORIGIN` | optional | server | CORS origin (default: `https://dawg.city`) |
-| `RECAPTCHA_SECRET` | yes | server | Google reCAPTCHA v3 validation |
-| `SUPABASE_URL` | yes | server, worker | Supabase API endpoint |
-| `SUPABASE_SERVICE_ROLE_KEY` | yes | server, worker | Server auth for Supabase |
-| `STRIPE_WEBHOOK_SECRET` | yes | server | Stripe signature verification |
-| `SIGHTENGINE_API_USER` | yes | server | AI detection service |
-| `SIGHTENGINE_API_SECRET` | yes | server | AI detection service |
-| `INSTAGRAM_TOKEN` | optional | server | Facebook Graph oEmbed |
-
-Run the worker locally
-----------------------
-The worker binary polls a `jobs` table in Supabase, claims and processes jobs, and writes results back.
-
-```bash
-export SUPABASE_URL="https://your-project.supabase.co"
-export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
-export SIGHTENGINE_API_USER="..."
-export SIGHTENGINE_API_SECRET="..."
-
-cargo run --bin worker
-```
-
-Project structure
------------------
 ```
 src/
-  main.rs        # Axum server entrypoint
-  analyze.rs     # POST /api/analyze handler
-  webhook.rs     # POST /api/webhook handler (Stripe)
-  worker.rs      # Async job processor (separate binary)
-static/          # Served by Axum fallback (ServeDir)
-  index.html, blog.html, about.html, ...
-  style.css, script.js
-  posts/
-Dockerfile       # Multi-stage build for server
-Dockerfile.worker
-railway.toml     # Railway deployment config
+  main.rs             HTTP server — routing, CORS, host-based rewriting
+  db.rs               PostgreSQL connection pool
+  routes/
+    auth.rs           Discord OAuth + session management
+    games.rs          Game list, play count, playtime ping (coin award)
+    leaderboard.rs    Score submission + ranked reads
+    coins.rs          Coin balance + transaction history
+    battlepass.rs     Season progress + tier claim
+    shop.rs           Shop item list + purchase
+  middleware/
+    auth.rs           Session token validation (Bearer header)
+  models/
+    mod.rs            DB row structs (User, Game, ShopItem, …)
+
+static/
+  index.html          dawg.city homepage — game grid + search
+  game.html           Full-screen game embed + leaderboard sidebar
+  leaderboard.html    Global + per-game leaderboards
+  profile.html        Coin balance, XP, streak, battle pass progress
+  css/
+    base.css          Design tokens, topbar, buttons, toasts
+    grid.css          Game card grid + skeleton loaders
+    game.css          Game embed layout + sidebar
+  js/
+    auth.js           Session token management + auth area render
+    coins.js          Coin display + 60s playtime ping loop
+    games.js          Fetch + render game grid
+
+  dailyspend/         Served at dailyspend.city (host-rewrite middleware)
+    index.html        Coin shop homepage — filterable item grid
+    item.html         Item detail page + buy button
+    profile.html      Coin balance + purchase history
+    redirect.html     Mirror finder — "dawg.city blocked? try these"
+    css/shop.css      All styles for dailyspend.city
+    js/auth.js        Session management (shared token with dawg.city)
+    js/shop.js        Fetch items, filter by type, purchase flow
+
+supabase/
+  schema.sql          Full DB schema — users, games, leaderboard, coins,
+                      battle pass, shop, sessions, mirrors
+  profiles.sql        Supabase profile helpers (if needed)
+  jobs.sql            Background job queue schema
 ```
 
-Development & CI
------------------
-- Unit tests and network-mocked tests are included for worker helpers.
-- A GitHub Actions workflow runs `cargo fmt`, `cargo clippy`, `cargo build`, `cargo test`, and `cargo audit` on `main`.
+---
 
-Architecture notes
-------------------
-For a full architecture assessment, see the repository's architecture review: [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md)
+## Environment variables
 
-Contributing
-------------
-Feel free to open issues or PRs. Key areas where contributions help:
-- CI and tests for production handlers
-- Robust HF integration and error handling
-- Quota enforcement and edge rate-limiting
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `DISCORD_CLIENT_ID` | Discord OAuth app client ID |
+| `DISCORD_CLIENT_SECRET` | Discord OAuth app client secret |
+| `DISCORD_REDIRECT_URI` | OAuth callback URL (e.g. `https://dawg.city/api/auth/callback`) |
+| `FRONTEND_URL` | Base URL for post-auth redirect (e.g. `https://dawg.city`) |
+| `PORT` | HTTP port — injected automatically by Railway |
 
-License
--------
+---
+
+## Running locally
+
+```bash
+# 1. Copy and fill environment variables
+cp .env.example .env
+
+# 2. Apply the database schema
+#    Run supabase/schema.sql in your Supabase SQL editor
+
+# 3. Start the server
+PORT=3000 ~/.cargo/bin/cargo run --bin server
+
+# 4. Open http://localhost:3000
+```
+
+---
+
+## Deploying to Railway
+
+### Server service
+
+1. Create a Railway project and link this repo.
+2. Railway auto-detects `Dockerfile` — builds the `server` binary.
+3. Set all environment variables listed above. `PORT` is injected automatically.
+4. Health check is configured at `GET /health` via `railway.toml`.
+5. Both `dawg.city` and `dailyspend.city` point to the same Railway service via Cloudflare.
+
+### Domain routing
+
+The server detects the `Host` header:
+
+- `Host: dawg.city` → serves `static/` (games portal)
+- `Host: dailyspend.city` → path-rewrites to `static/dailyspend/` (coin shop)
+- All `/api/*` routes are shared across both domains
+
+### Cloudflare setup
+
+- Both domains on the same Cloudflare account.
+- SSL mode: **Full (strict)**.
+- Both A records point to the Railway service IP with orange-cloud proxying enabled.
+- `www.*` → canonical redirect handled by the server middleware.
+
+---
+
+## API endpoints
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/auth/discord` | — | Redirect to Discord OAuth |
+| `GET` | `/api/auth/callback` | — | OAuth callback, issues session |
+| `GET` | `/api/me` | ✓ | Authenticated user profile |
+| `GET` | `/api/me/coins` | ✓ | Coin balance + history + purchases |
+| `GET` | `/api/mirrors` | — | Active mirror URLs for redirect page |
+| `GET` | `/api/games` | — | List games (`?category=&search=&featured=true`) |
+| `GET` | `/api/games/:slug` | — | Single game details |
+| `POST` | `/api/games/:slug/ping` | ✓ | Playtime heartbeat — awards 5 coins + 10 XP (cap: 30/day/game) |
+| `GET` | `/api/games/:slug/leaderboard` | — | Top scores for a game |
+| `POST` | `/api/games/:slug/score` | ✓ | Submit score (kept if higher than personal best) |
+| `GET` | `/api/battlepass` | ✓ | Current season + tier progress |
+| `POST` | `/api/battlepass/claim/:tier` | ✓ | Claim a tier reward |
+| `GET` | `/api/shop` | — | List active shop items |
+| `POST` | `/api/shop/buy/:item_id` | ✓ | Purchase an item with coins |
+| `GET` | `/health` | — | Healthcheck |
+
+---
+
+## Coin earn rates
+
+| Action | Coins | XP | Cap |
+|---|---|---|---|
+| Playing (60s ping) | +5 | +10 | 30 pings/day/game |
+| Daily streak day 1–6 | +10 | +20 | Once/day |
+| Daily streak day 7+ | +50 | +100 | Once/week |
+| Posting a score | +15 | +30 | Once/game/day |
+| Beating personal best | +25 | +50 | Once/game/day |
+
+---
+
+## Build status
+
+Phases completed: **0 → 4** (archive → DB schema → Rust API → dawg.city frontend → dailyspend.city frontend)
+
+Next: Phase 5 — Gamification Engine (battle pass UI, streak system, leaderboard reset jobs)
+
+---
+
+## License
+
 MIT
+

@@ -15,4 +15,5 @@ test_output*.txt
 *~
 *.swp
 .vercel
+.env
 .env*.local

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Find dawg.city — dailyspend.city</title>
+  <meta name="description" content="dawg.city blocked? Find the current working mirror link here.">
+  <link rel="icon" href="https://dawg.city/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/shop.css">
+</head>
+<body>
+
+  <!-- ── Topbar ──────────────────────────────────────────────────────── -->
+  <header id="topbar">
+    <a class="logo" href="/">DAILY<span>SPEND</span>.CITY</a>
+    <div class="topbar-right" id="auth-area">
+      <!-- filled by auth.js -->
+    </div>
+  </header>
+
+  <!-- ── Redirect content ────────────────────────────────────────────── -->
+  <div class="redirect-wrap">
+    <div class="rd-icon">🐾</div>
+    <h1>dawg.city blocked?</h1>
+    <p>
+      School WiFi got you? Use one of the working links below to keep playing.
+      All your coins and progress carry over automatically — same account, same login.
+    </p>
+
+    <!-- Mirror links (populated by API) -->
+    <div class="mirror-list" id="mirror-list">
+      <div style="color:var(--muted);font-size:0.9rem">Loading links…</div>
+    </div>
+
+    <!-- Discord fallback -->
+    <p class="rd-footer">
+      For the latest link, <strong>join our Discord</strong> — we post new mirrors
+      in <code>#new-domain</code> the moment one goes live.<br>
+      <a
+        href="https://discord.gg/dawgcity"
+        class="btn btn-discord"
+        style="display:inline-flex;margin-top:14px"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Join Discord
+      </a>
+    </p>
+  </div>
+
+  <!-- ── Toast container ─────────────────────────────────────────────── -->
+  <div id="toast-container"></div>
+
+  <!-- ── Scripts ─────────────────────────────────────────────────────── -->
+  <script src="/js/auth.js"></script>
+  <script>
+    const API = 'https://dawg.city';
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    async function loadMirrors() {
+      const list = document.getElementById('mirror-list');
+      try {
+        const res = await fetch(`${API}/api/mirrors`);
+        if (!res.ok) throw new Error('non-200');
+        const mirrors = await res.json();
+
+        if (!mirrors.length) {
+          list.innerHTML = `
+            <div style="color:var(--muted);font-size:0.9rem">
+              No mirrors listed right now — check Discord for the latest link.
+            </div>`;
+          return;
+        }
+
+        list.innerHTML = mirrors.map(m => `
+          <a class="mirror-link" href="${escHtml(m.url)}" target="_blank" rel="noopener noreferrer">
+            ${escHtml(m.url)}
+            <span class="ml-arrow">→</span>
+          </a>`).join('');
+      } catch (_) {
+        list.innerHTML = `
+          <div style="color:var(--muted);font-size:0.9rem">
+            Could not load mirrors. Join Discord for the current link.
+          </div>`;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadMirrors);
+  </script>
+</body>
+</html>

@@ -1,1 +1,8 @@
+# ads.txt — dawg.city
+# Add PropellerAds / Monetag entries here once your account is approved.
+# Example (replace with your actual publisher ID):
+# propellerads.com, YOUR_ID, DIRECT
+# monetag.com, YOUR_ID, DIRECT
+#
+# AdSense (kept as fallback — not primary until 3+ months traffic)
 google.com, pub-8618370006634409, DIRECT, f08c47fec0942fa0
