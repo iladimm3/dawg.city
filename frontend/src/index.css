@@ -1,0 +1,162 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap");
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Surface palette — DESIGN.md "Editorial Playfulness" */
+  --surface: #180429;
+  --surface-container-lowest: #000000;
+  --surface-container-low: #1e0831;
+  --surface-container: #231039;
+  --surface-container-high: #2d1343;
+  --surface-container-highest: #34184c;
+  --surface-variant: #34184c;
+  --surface-bright: #3c1d56;
+
+  /* Primary */
+  --primary: #be9dff;
+  --primary-dim: #8b4ef7;
+  --primary-container: #b28cff;
+  --on-primary: #ffffff;
+  --on-primary-container: #2e006b;
+  --primary-foreground: #2e006b;
+
+  /* Secondary */
+  --secondary: #3adffa;
+  --secondary-container: #006877;
+  --on-secondary: #004b56;
+  --secondary-foreground: #004b56;
+
+  /* Text */
+  --on-surface: #f3deff;
+  --on-surface-variant: #bba1cf;
+  --outline: #846c96;
+  --outline-variant: #543f66;
+
+  /* Feedback */
+  --success: #4ade80;
+  --error: #f87171;
+  --error-container: #a70138;
+  --warning: #fbbf24;
+
+  /* shadcn variables mapped to design system */
+  --radius: 1rem;
+  --background: #180429;
+  --foreground: #f3deff;
+  --card: #1e0831;
+  --card-foreground: #f3deff;
+  --popover: #2d1343;
+  --popover-foreground: #f3deff;
+  --muted: #231039;
+  --muted-foreground: #bba1cf;
+  --accent: #2d1343;
+  --accent-foreground: #f3deff;
+  --destructive: #f87171;
+  --border: #34184c;
+  --input: #34184c;
+  --ring: #be9dff;
+  --chart-1: #be9dff;
+  --chart-2: #3adffa;
+  --chart-3: #4ade80;
+  --chart-4: #fbbf24;
+  --chart-5: #f87171;
+
+  --sidebar: #1e0831;
+  --sidebar-foreground: #f3deff;
+  --sidebar-primary: #be9dff;
+  --sidebar-primary-foreground: #2e006b;
+  --sidebar-accent: #2d1343;
+  --sidebar-accent-foreground: #f3deff;
+  --sidebar-border: #34184c;
+  --sidebar-ring: #be9dff;
+}
+
+@theme inline {
+  /* Custom design-system colors */
+  --color-surface: var(--surface);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-surface-variant: var(--surface-variant);
+  --color-surface-bright: var(--surface-bright);
+  --color-primary: var(--primary);
+  --color-primary-dim: var(--primary-dim);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary: var(--on-primary);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-secondary: var(--secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary: var(--on-secondary);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-success: var(--success);
+  --color-error: var(--error);
+  --color-error-container: var(--error-container);
+  --color-warning: var(--warning);
+
+  /* Fonts */
+  --font-display: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Be Vietnam Pro", sans-serif;
+  --font-sans: "Be Vietnam Pro", sans-serif;
+
+  /* Radii */
+  --radius-xl: 3rem;
+  --radius-lg: 2rem;
+  --radius-md: 1rem;
+  --radius-sm: 0.5rem;
+
+  /* shadcn theme mappings */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    border-color: transparent;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
