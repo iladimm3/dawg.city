@@ -1,3 +1,10 @@
+# Redirect www → apex
+server {
+    listen 80;
+    server_name www.dawg.city;
+    return 301 https://dawg.city$request_uri;
+}
+
 server {
     listen 80;
     server_name _;
