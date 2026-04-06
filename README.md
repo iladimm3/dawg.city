@@ -53,11 +53,17 @@ cargo run
 |--------|------|-------------|
 | POST | /api/training/session | Generate AI training session |
 | POST | /api/training/log | Log session result |
+| GET | /api/training/history?dog_id=&limit=&offset= | Paginated training history |
 
 ### Nutrition (🔒 requires auth)
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | /api/nutrition/plan | Generate AI nutrition plan |
+
+### System
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /health | Health check + DB status |
 
 ## Deploy to Railway
 
@@ -73,6 +79,20 @@ railway up
 ```
 
 Set env vars in Railway dashboard matching `.env.example`.
+
+## Environment Variables
+
+| Variable | Required | Example |
+|----------|----------|---------|
+| `DATABASE_URL` | ✅ | `postgres://user:pass@host/db` |
+| `GOOGLE_CLIENT_ID` | ✅ | `123456.apps.googleusercontent.com` |
+| `GOOGLE_CLIENT_SECRET` | ✅ | `GOCSPX-...` |
+| `GOOGLE_REDIRECT_URI` | ✅ | `https://your-domain/auth/google/callback` |
+| `COOKIE_SECRET` | ✅ | 64-char random hex string |
+| `ANTHROPIC_API_KEY` | ✅ | `sk-ant-...` |
+| `ANTHROPIC_MODEL` | optional | `claude-sonnet-4-20250514` |
+| `PORT` | optional | `3000` |
+| `RUST_LOG` | optional | `info` |
 
 ## Google OAuth Setup
 1. Go to [console.cloud.google.com](https://console.cloud.google.com)
