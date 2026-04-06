@@ -1,166 +1,113 @@
-mod db;
+use anyhow::Result;
+use axum::{
+    extract::State,
+    http::StatusCode,
+    response::IntoResponse,
+    routing::get,
+    Json, Router,
+};
+use sqlx::postgres::PgPoolOptions;
+use std::sync::Arc;
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
 mod middleware;
 mod models;
+mod errors;
 mod routes;
+mod services;
 
-use axum::{
-    extract::Request,
-    middleware::Next,
-    response::{IntoResponse, Response},
-    routing::{get, post},
-    Router,
-};
-use http::StatusCode;
-use std::net::SocketAddr;
-use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
-use tower_http::services::ServeDir;
+use routes::{auth, dogs, training, nutrition};
 
-/// Redirect www → non-www and http → https for both dawg.city and dailyspend.city.
-/// Must run before any other routing logic.
-async fn canonical_redirect(req: Request, next: Next) -> Response {
-    let host = req
-        .headers()
-        .get("host")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-
-    let scheme = req
-        .headers()
-        .get("x-forwarded-proto")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("http");
-
-    // Strip www. prefix if present; preserve the canonical host for both domains
-    let is_www = host.starts_with("www.");
-    let canonical_host = if is_www { &host[4..] } else { host };
-    let wrong_scheme = scheme != "https";
-
-    if is_www || wrong_scheme {
-        let clean_path = req
-            .uri()
-            .path_and_query()
-            .map(|p| p.as_str())
-            .unwrap_or("/");
-        let target = format!("https://{}{}", canonical_host, clean_path);
-
-        return (
-            StatusCode::MOVED_PERMANENTLY,
-            [(http::header::LOCATION, target)],
-        )
-            .into_response();
-    }
-
-    next.run(req).await
+#[derive(Clone)]
+pub struct AppState {
+    pub db: sqlx::PgPool,
+    pub oauth: Arc<services::oauth::GoogleOAuth>,
+    pub cookie_key: axum_extra::extract::cookie::Key,
 }
 
-/// Rewrite paths for dailyspend.city requests so that ServeDir("static")
-/// finds files under static/dailyspend/.  API and health paths are left alone.
-async fn dailyspend_rewrite(mut req: Request, next: Next) -> Response {
-    let host = req
-        .headers()
-        .get("host")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-
-    if host == "dailyspend.city" {
-        let path = req.uri().path();
-        if !path.starts_with("/api/") && path != "/health" {
-            let new_path = if path == "/" {
-                "/dailyspend/index.html".to_string()
-            } else {
-                format!("/dailyspend{}", path)
-            };
-            let query = req
-                .uri()
-                .query()
-                .map(|q| format!("?{}", q))
-                .unwrap_or_default();
-            if let Ok(new_uri) = format!("{}{}", new_path, query).parse::<http::Uri>() {
-                *req.uri_mut() = new_uri;
-            }
-        }
+impl axum::extract::FromRef<AppState> for axum_extra::extract::cookie::Key {
+    fn from_ref(state: &AppState) -> Self {
+        state.cookie_key.clone()
     }
-
-    next.run(req).await
-}
-
-async fn health() -> &'static str {
-    "OK"
 }
 
 #[tokio::main]
-async fn main() {
-    let db = db::connect().await;
+async fn main() -> Result<()> {
+    // Load .env
+    dotenvy::dotenv().ok();
 
-    // Allow both domains as CORS origins
-    let cors = CorsLayer::new()
-        .allow_origin(AllowOrigin::list([
-            "https://dawg.city".parse().unwrap(),
-            "https://dailyspend.city".parse().unwrap(),
-        ]))
-        .allow_methods(AllowMethods::list([
-            http::Method::GET,
-            http::Method::POST,
-            http::Method::OPTIONS,
-        ]))
-        .allow_headers(AllowHeaders::list([
-            http::header::CONTENT_TYPE,
-            http::header::AUTHORIZATION,
-        ]))
-        .allow_credentials(true);
+    // Tracing
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new(
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "dawg_city=debug,tower_http=debug".into()),
+        ))
+        .with(tracing_subscriber::fmt::layer())
+        .init();
 
-    let api_routes = Router::new()
-        // auth
-        .route("/api/auth/discord", get(routes::auth::login))
-        .route("/api/auth/callback", get(routes::auth::callback))
-        .route("/api/me", get(routes::auth::me))
-        .route("/api/mirrors", get(routes::auth::mirrors))
-        // games
-        .route("/api/games", get(routes::games::list))
-        .route("/api/games/:slug", get(routes::games::get_game))
-        .route("/api/games/:slug/ping", post(routes::games::ping))
-        // leaderboard
-        .route("/api/games/:slug/leaderboard", get(routes::leaderboard::get_leaderboard))
-        .route("/api/games/:slug/score", post(routes::leaderboard::submit_score))
-        // coins
-        .route("/api/me/coins", get(routes::coins::balance))
-        // battle pass
-        .route("/api/battlepass", get(routes::battlepass::status))
-        .route("/api/battlepass/claim/:tier", post(routes::battlepass::claim))
-        // shop
-        .route("/api/shop", get(routes::shop::list))
-        .route("/api/shop/buy/:item_id", post(routes::shop::buy))
-        .with_state(db)
-        .layer(cors);
+    // Database
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let db = PgPoolOptions::new()
+        .max_connections(10)
+        .connect(&database_url)
+        .await?;
 
+    // Run migrations
+    sqlx::migrate!("./migrations").run(&db).await?;
+    tracing::info!("Database migrations applied");
+
+    // Google OAuth
+    let oauth = Arc::new(services::oauth::GoogleOAuth::new()?);
+
+    // Cookie signing key (store this secret in env in production)
+    let cookie_secret = std::env::var("COOKIE_SECRET").expect("COOKIE_SECRET must be set");
+    let cookie_key = axum_extra::extract::cookie::Key::from(cookie_secret.as_bytes());
+
+    let state = AppState { db, oauth, cookie_key };
+
+    // Router
     let app = Router::new()
-        .route("/health", get(health))
-        .merge(api_routes)
-        .fallback_service(ServeDir::new("static"))
-        .layer(axum::middleware::from_fn(dailyspend_rewrite))
-        .layer(axum::middleware::from_fn(canonical_redirect));
+        .route("/health", get(health_check))
+        // Auth routes
+        .nest("/auth", auth::router())
+        // API routes (protected)
+        .nest("/api/dogs", dogs::router(state.clone()))
+        .nest("/api/training", training::router(state.clone()))
+        .nest("/api/nutrition", nutrition::router(state.clone()))
+        .layer(TraceLayer::new_for_http())
+        .layer(CorsLayer::permissive()) // Tighten in production
+        .with_state(state);
 
-    let port: u16 = std::env::var("PORT")
-        .ok()
-        .and_then(|p| p.parse().ok())
-        .unwrap_or(3000);
+    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+    let addr = format!("0.0.0.0:{}", port);
+    tracing::info!("Dawg City running on {}", addr);
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    println!("listening on {addr}");
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
+    axum::serve(listener, app).await?;
 
-    let listener = tokio::net::TcpListener::bind(addr)
-        .await
-        .expect("failed to bind");
-
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await
-        .expect("server error");
+    Ok(())
 }
 
-async fn shutdown_signal() {
-    tokio::signal::ctrl_c()
-        .await
-        .expect("failed to listen for ctrl+c");
-    println!("shutting down");
+async fn health_check(State(state): State<AppState>) -> impl IntoResponse {
+    let version = env!("CARGO_PKG_VERSION");
+    match sqlx::query("SELECT 1").execute(&state.db).await {
+        Ok(_) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "status": "ok",
+                "version": version,
+                "db": "connected"
+            })),
+        )
+            .into_response(),
+        Err(_) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({
+                "status": "degraded",
+                "version": version,
+                "db": "unreachable"
+            })),
+        )
+            .into_response(),
+    }
 }

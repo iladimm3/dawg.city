@@ -1,0 +1,91 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE dogs SET name=$1, breed=$2, age_months=$3, weight_kg=$4,\n        sex=$5, neutered=$6, activity_level=$7, health_notes=$8\n        WHERE id=$9 AND owner_id=$10\n        RETURNING *\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "owner_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "breed",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "age_months",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "weight_kg",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "sex",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "neutered",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "activity_level",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "health_notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Int4",
+        "Float8",
+        "Text",
+        "Bool",
+        "Text",
+        "Text",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "663afdd04eaaccb986d65b1a0cabcd4344ae4806dc59151d455aa5de9933adcf"
+}

@@ -1,0 +1,91 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO dogs (id, owner_id, name, breed, age_months, weight_kg, sex, neutered, activity_level, health_notes, created_at)\n        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())\n        RETURNING *\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "owner_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "breed",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "age_months",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "weight_kg",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "sex",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "neutered",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "activity_level",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "health_notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Int4",
+        "Float8",
+        "Text",
+        "Bool",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "2ddab80d3d6a0f8cff0c1b4e4169728d8d7456c0398d443d4cbe485d218f190f"
+}

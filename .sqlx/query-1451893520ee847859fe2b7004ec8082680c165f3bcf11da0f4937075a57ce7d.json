@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM dogs WHERE owner_id = $1 ORDER BY created_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "owner_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "breed",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "age_months",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "weight_kg",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "sex",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "neutered",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "activity_level",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "health_notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "1451893520ee847859fe2b7004ec8082680c165f3bcf11da0f4937075a57ce7d"
+}

@@ -1,22 +1,25 @@
-name: CI — worker
+name: CI
 
 on:
   push:
     branches: [ main ]
     paths:
-      - 'api/**'
+      - 'src/**'
+      - 'migrations/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
       - '.github/workflows/**'
   pull_request:
     branches: [ main ]
     paths:
-      - 'api/**'
+      - 'src/**'
       - 'Cargo.toml'
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      SQLX_OFFLINE: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -46,7 +49,7 @@ jobs:
         run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Build
-        run: cargo build --all-targets --release
+        run: cargo build --release
 
       - name: Tests
         run: cargo test --all -- --nocapture

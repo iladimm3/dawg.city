@@ -1,184 +1,82 @@
-# dawg.city
+# 🐾 Dawg City API
 
-Free unblocked games portal with a gamified coin economy — built for school networks.
-
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-
----
-
-## What it is
-
-**dawg.city** — Play hundreds of free games, earn coins just by playing, climb leaderboards, and unlock rewards through a battle pass.
-
-**dailyspend.city** — The companion coin shop. Spend earned coins on badges, boosts, and pass upgrades.
-
-Both sites run on a single Rust server with a shared PostgreSQL database. User accounts are Discord OAuth — no email required.
-
----
+AI-powered dog training & nutrition backend built with Axum (Rust) + PostgreSQL.
 
 ## Stack
+- **Framework**: Axum 0.7
+- **Database**: PostgreSQL via SQLx
+- **Auth**: Google OAuth2 (signed cookie sessions)
+- **AI**: Anthropic Claude (training + nutrition plans)
+- **Hosting**: Railway
 
-| Layer | Technology |
-|---|---|
-| Frontend | Plain HTML + CSS + JS (no framework) |
-| Backend | Rust (Axum) |
-| Database | PostgreSQL (Supabase) |
-| Auth | Discord OAuth 2.0 |
-| CDN / DNS | Cloudflare |
-| Deploy | Railway (Docker) |
-
----
-
-## Project structure
-
-```
-src/
-  main.rs             HTTP server — routing, CORS, host-based rewriting
-  db.rs               PostgreSQL connection pool
-  routes/
-    auth.rs           Discord OAuth + session management
-    games.rs          Game list, play count, playtime ping (coin award)
-    leaderboard.rs    Score submission + ranked reads
-    coins.rs          Coin balance + transaction history
-    battlepass.rs     Season progress + tier claim
-    shop.rs           Shop item list + purchase
-  middleware/
-    auth.rs           Session token validation (Bearer header)
-  models/
-    mod.rs            DB row structs (User, Game, ShopItem, …)
-
-static/
-  index.html          dawg.city homepage — game grid + search
-  game.html           Full-screen game embed + leaderboard sidebar
-  leaderboard.html    Global + per-game leaderboards
-  profile.html        Coin balance, XP, streak, battle pass progress
-  css/
-    base.css          Design tokens, topbar, buttons, toasts
-    grid.css          Game card grid + skeleton loaders
-    game.css          Game embed layout + sidebar
-  js/
-    auth.js           Session token management + auth area render
-    coins.js          Coin display + 60s playtime ping loop
-    games.js          Fetch + render game grid
-
-  dailyspend/         Served at dailyspend.city (host-rewrite middleware)
-    index.html        Coin shop homepage — filterable item grid
-    item.html         Item detail page + buy button
-    profile.html      Coin balance + purchase history
-    redirect.html     Mirror finder — "dawg.city blocked? try these"
-    css/shop.css      All styles for dailyspend.city
-    js/auth.js        Session management (shared token with dawg.city)
-    js/shop.js        Fetch items, filter by type, purchase flow
-
-supabase/
-  schema.sql          Full DB schema — users, games, leaderboard, coins,
-                      battle pass, shop, sessions, mirrors
-  profiles.sql        Supabase profile helpers (if needed)
-  jobs.sql            Background job queue schema
-```
-
----
-
-## Environment variables
-
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `DISCORD_CLIENT_ID` | Discord OAuth app client ID |
-| `DISCORD_CLIENT_SECRET` | Discord OAuth app client secret |
-| `DISCORD_REDIRECT_URI` | OAuth callback URL (e.g. `https://dawg.city/api/auth/callback`) |
-| `FRONTEND_URL` | Base URL for post-auth redirect (e.g. `https://dawg.city`) |
-| `PORT` | HTTP port — injected automatically by Railway |
-
----
-
-## Running locally
+## Local Setup
 
 ```bash
-# 1. Copy and fill environment variables
+# 1. Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# 2. Install sqlx-cli for migrations
+cargo install sqlx-cli --no-default-features --features postgres
+
+# 3. Copy env file and fill in values
 cp .env.example .env
 
-# 2. Apply the database schema
-#    Run supabase/schema.sql in your Supabase SQL editor
+# 4. Create local DB and run migrations
+createdb dawgcity
+sqlx migrate run
 
-# 3. Start the server
-PORT=3000 ~/.cargo/bin/cargo run --bin server
-
-# 4. Open http://localhost:3000
+# 5. Run
+cargo run
 ```
 
----
+## API Routes
 
-## Deploying to Railway
+### Auth
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /auth/google | Redirect to Google login |
+| GET | /auth/google/callback | OAuth callback |
+| GET | /auth/logout | Clear session |
+| GET | /auth/me | Current user info |
 
-### Server service
+### Dogs (🔒 requires auth)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /api/dogs | List your dogs |
+| POST | /api/dogs | Create dog profile |
+| GET | /api/dogs/:id | Get single dog |
+| PUT | /api/dogs/:id | Update dog |
+| DELETE | /api/dogs/:id | Delete dog |
 
-1. Create a Railway project and link this repo.
-2. Railway auto-detects `Dockerfile` — builds the `server` binary.
-3. Set all environment variables listed above. `PORT` is injected automatically.
-4. Health check is configured at `GET /health` via `railway.toml`.
-5. Both `dawg.city` and `dailyspend.city` point to the same Railway service via Cloudflare.
+### Training (🔒 requires auth)
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | /api/training/session | Generate AI training session |
+| POST | /api/training/log | Log session result |
 
-### Domain routing
+### Nutrition (🔒 requires auth)
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | /api/nutrition/plan | Generate AI nutrition plan |
 
-The server detects the `Host` header:
+## Deploy to Railway
 
-- `Host: dawg.city` → serves `static/` (games portal)
-- `Host: dailyspend.city` → path-rewrites to `static/dailyspend/` (coin shop)
-- All `/api/*` routes are shared across both domains
+```bash
+# Install Railway CLI
+npm install -g @railway/cli
 
-### Cloudflare setup
+# Login and deploy
+railway login
+railway init
+railway add --plugin postgresql
+railway up
+```
 
-- Both domains on the same Cloudflare account.
-- SSL mode: **Full (strict)**.
-- Both A records point to the Railway service IP with orange-cloud proxying enabled.
-- `www.*` → canonical redirect handled by the server middleware.
+Set env vars in Railway dashboard matching `.env.example`.
 
----
-
-## API endpoints
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| `GET` | `/api/auth/discord` | — | Redirect to Discord OAuth |
-| `GET` | `/api/auth/callback` | — | OAuth callback, issues session |
-| `GET` | `/api/me` | ✓ | Authenticated user profile |
-| `GET` | `/api/me/coins` | ✓ | Coin balance + history + purchases |
-| `GET` | `/api/mirrors` | — | Active mirror URLs for redirect page |
-| `GET` | `/api/games` | — | List games (`?category=&search=&featured=true`) |
-| `GET` | `/api/games/:slug` | — | Single game details |
-| `POST` | `/api/games/:slug/ping` | ✓ | Playtime heartbeat — awards 5 coins + 10 XP (cap: 30/day/game) |
-| `GET` | `/api/games/:slug/leaderboard` | — | Top scores for a game |
-| `POST` | `/api/games/:slug/score` | ✓ | Submit score (kept if higher than personal best) |
-| `GET` | `/api/battlepass` | ✓ | Current season + tier progress |
-| `POST` | `/api/battlepass/claim/:tier` | ✓ | Claim a tier reward |
-| `GET` | `/api/shop` | — | List active shop items |
-| `POST` | `/api/shop/buy/:item_id` | ✓ | Purchase an item with coins |
-| `GET` | `/health` | — | Healthcheck |
-
----
-
-## Coin earn rates
-
-| Action | Coins | XP | Cap |
-|---|---|---|---|
-| Playing (60s ping) | +5 | +10 | 30 pings/day/game |
-| Daily streak day 1–6 | +10 | +20 | Once/day |
-| Daily streak day 7+ | +50 | +100 | Once/week |
-| Posting a score | +15 | +30 | Once/game/day |
-| Beating personal best | +25 | +50 | Once/game/day |
-
----
-
-## Build status
-
-Phases completed: **0 → 4** (archive → DB schema → Rust API → dawg.city frontend → dailyspend.city frontend)
-
-Next: Phase 5 — Gamification Engine (battle pass UI, streak system, leaderboard reset jobs)
-
----
-
-## License
-
-MIT
-
+## Google OAuth Setup
+1. Go to [console.cloud.google.com](https://console.cloud.google.com)
+2. Create project → APIs & Services → Credentials
+3. Create OAuth 2.0 Client ID (Web application)
+4. Add redirect URI: `https://your-railway-domain/auth/google/callback`
+5. Copy Client ID + Secret to Railway env vars

@@ -1,0 +1,59 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT name, breed, age_months, weight_kg, activity_level, health_notes, neutered FROM dogs WHERE id = $1 AND owner_id = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "breed",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "age_months",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "weight_kg",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "activity_level",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "health_notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "neutered",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "a5d4a843c3f4031cbec50a6e22451fd5c05c96c76baed7e72b89e176b2ade7b7"
+}
