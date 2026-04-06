@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { dogsApi, trainingApi } from "@/lib/api";
+import { useMutation } from "@tanstack/react-query";
+import { trainingApi } from "@/lib/api";
+import { useDogs } from "@/hooks/useDogs";
+import { DogSelector } from "@/components/DogSelector";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -16,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { GlassDialog } from "@/components/GlassDialog";
 import { FloatingPawIcon } from "@/components/FloatingPawIcon";
 import { Dumbbell, Star, Bone, CheckCircle } from "lucide-react";
-import type { Dog, TrainingSession, TrainingRequest } from "@/types";
+import type { TrainingSession, TrainingRequest } from "@/types";
 
 const FOCUS_AREAS = [
   "Obedience",
@@ -32,15 +34,11 @@ const FOCUS_AREAS = [
 ];
 
 export default function Training() {
-  const { data: dogs } = useQuery<Dog[]>({
-    queryKey: ["dogs"],
-    queryFn: dogsApi.list,
-  });
-  const dog = dogs?.[0];
+  const { dogs, currentDog: dog, selectDog } = useDogs();
 
   const [focusAreas, setFocusAreas] = useState<string[]>([]);
   const [duration, setDuration] = useState(15);
-  const [difficulty, setDifficulty] = useState("medium");
+  const [difficulty, setDifficulty] = useState("beginner");
   const [lastNotes, setLastNotes] = useState("");
 
   const [session, setSession] = useState<TrainingSession | null>(null);
@@ -99,11 +97,13 @@ export default function Training() {
       <h1 className="font-display text-3xl md:text-4xl font-bold text-on-surface mb-2">
         Training Studio
       </h1>
-      <p className="text-on-surface-variant font-body mb-10">
+      <p className="text-on-surface-variant font-body mb-6">
         {dog
           ? `Craft the perfect session for ${dog.name}`
           : "Loading your dog..."}
       </p>
+
+      <DogSelector dogs={dogs} currentDog={dog} onSelect={selectDog} />
 
       {/* Focus Areas */}
       <section className="mb-8">
@@ -153,9 +153,9 @@ export default function Training() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-surface-container-highest text-on-surface border-0 rounded-lg">
-              <SelectItem value="easy">Easy</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="hard">Hard</SelectItem>
+              <SelectItem value="beginner">Beginner</SelectItem>
+              <SelectItem value="intermediate">Intermediate</SelectItem>
+              <SelectItem value="advanced">Advanced</SelectItem>
             </SelectContent>
           </Select>
         </div>

@@ -8,7 +8,7 @@ use axum::{
 };
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
-use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use tower_http::{cors::{CorsLayer, AllowOrigin}, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod middleware;
@@ -75,7 +75,22 @@ async fn main() -> Result<()> {
         .nest("/api/training", training::router(state.clone()))
         .nest("/api/nutrition", nutrition::router(state.clone()))
         .layer(TraceLayer::new_for_http())
-        .layer(CorsLayer::permissive()) // Tighten in production
+        .layer({
+            let cors_origins = std::env::var("CORS_ORIGINS").unwrap_or_default();
+            if cors_origins.is_empty() || cors_origins == "*" {
+                CorsLayer::permissive()
+            } else {
+                let origins: Vec<_> = cors_origins
+                    .split(',')
+                    .filter_map(|s| s.trim().parse().ok())
+                    .collect();
+                CorsLayer::new()
+                    .allow_origin(AllowOrigin::list(origins))
+                    .allow_methods(tower_http::cors::Any)
+                    .allow_headers(tower_http::cors::Any)
+                    .allow_credentials(true)
+            }
+        })
         .with_state(state);
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());

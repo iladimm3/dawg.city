@@ -108,7 +108,8 @@ Respond ONLY with valid JSON in this exact format:
         goal, food_brand, restrictions, issues
     );
 
-    let api_key = std::env::var("ANTHROPIC_API_KEY").expect("ANTHROPIC_API_KEY must be set");
+    let api_key = std::env::var("ANTHROPIC_API_KEY")
+        .map_err(|_| AppError::InternalError("ANTHROPIC_API_KEY is not configured".into()))?;
     let model = std::env::var("ANTHROPIC_MODEL")
         .unwrap_or_else(|_| "claude-sonnet-4-20250514".to_string());
 

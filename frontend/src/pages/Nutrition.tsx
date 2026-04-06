@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { dogsApi, nutritionApi } from "@/lib/api";
+import { useMutation } from "@tanstack/react-query";
+import { nutritionApi } from "@/lib/api";
+import { useDogs } from "@/hooks/useDogs";
+import { DogSelector } from "@/components/DogSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { FloatingPawIcon } from "@/components/FloatingPawIcon";
 import { Apple, Plus, X, Bone, Clock, Pill, FileText } from "lucide-react";
-import type { Dog, NutritionPlan, NutritionRequest } from "@/types";
+import type { NutritionPlan, NutritionRequest } from "@/types";
 
 const DIETARY_OPTIONS = [
   "Grain-free",
@@ -32,11 +34,7 @@ const ISSUE_OPTIONS = [
 ];
 
 export default function Nutrition() {
-  const { data: dogs } = useQuery<Dog[]>({
-    queryKey: ["dogs"],
-    queryFn: dogsApi.list,
-  });
-  const dog = dogs?.[0];
+  const { dogs, currentDog: dog, selectDog } = useDogs();
 
   const [foodBrand, setFoodBrand] = useState("");
   const [restrictions, setRestrictions] = useState<string[]>([]);
@@ -81,11 +79,13 @@ export default function Nutrition() {
       <h1 className="font-display text-3xl md:text-4xl font-bold text-on-surface mb-2">
         Nutrition Lab
       </h1>
-      <p className="text-on-surface-variant font-body mb-10">
+      <p className="text-on-surface-variant font-body mb-6">
         {dog
           ? `Build the perfect diet for ${dog.name}`
           : "Loading your dog..."}
       </p>
+
+      <DogSelector dogs={dogs} currentDog={dog} onSelect={selectDog} />
 
       {/* Inputs */}
       <div className="space-y-8 mb-10">

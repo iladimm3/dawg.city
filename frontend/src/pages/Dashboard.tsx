@@ -1,24 +1,23 @@
 import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { dogsApi, trainingApi } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
+import { useDogs } from "@/hooks/useDogs";
 import { DogHeroCard } from "@/components/DogHeroCard";
+import { DogSelector } from "@/components/DogSelector";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dumbbell, Apple, Bone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dumbbell, Apple, Bone, Plus, Pencil, Trash2 } from "lucide-react";
 import { FloatingPawIcon } from "@/components/FloatingPawIcon";
-import type { Dog, TrainingLogEntry } from "@/types";
+import type { TrainingLogEntry } from "@/types";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const { data: dogs, isLoading: dogsLoading } = useQuery<Dog[]>({
-    queryKey: ["dogs"],
-    queryFn: dogsApi.list,
-  });
-
-  const currentDog = dogs?.[0];
+  const { dogs, currentDog, isLoading: dogsLoading, selectDog } = useDogs();
 
   const { data: historyData } = useQuery({
     queryKey: ["training-history", currentDog?.id],
@@ -27,6 +26,11 @@ export default function Dashboard() {
   });
 
   const recentSessions: TrainingLogEntry[] = historyData?.data ?? [];
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => dogsApi.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dogs"] }),
+  });
 
   useEffect(() => {
     if (!dogsLoading && dogs && dogs.length === 0) {
@@ -62,9 +66,51 @@ export default function Dashboard() {
       </div>
 
       {/* Greeting */}
-      <h1 className="font-display text-3xl md:text-4xl font-bold text-on-surface mb-10">
+      <h1 className="font-display text-3xl md:text-4xl font-bold text-on-surface mb-6">
         Hey, {user?.name?.split(" ")[0] ?? "there"} 👋
       </h1>
+
+      {/* Dog Selector + Actions */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <DogSelector dogs={dogs} currentDog={currentDog} onSelect={selectDog} />
+        <div className="flex gap-2 mb-8">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => navigate("/onboarding")}
+            className="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-lg gap-1"
+          >
+            <Plus size={14} />
+            Add Dog
+          </Button>
+          {currentDog && (
+            <>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => navigate(`/onboarding?edit=${currentDog.id}`)}
+                className="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-lg gap-1"
+              >
+                <Pencil size={14} />
+                Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  if (window.confirm(`Delete ${currentDog.name}? This cannot be undone.`)) {
+                    deleteMutation.mutate(currentDog.id);
+                  }
+                }}
+                className="text-error hover:text-error hover:bg-error/10 rounded-lg gap-1"
+              >
+                <Trash2 size={14} />
+                Delete
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
 
       {/* Dog Hero Card */}
       {currentDog && (

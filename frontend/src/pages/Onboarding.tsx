@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { dogsApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PawPrint } from "lucide-react";
-import type { CreateDogPayload } from "@/types";
+import type { CreateDogPayload, Dog } from "@/types";
 
 const BREEDS = [
   "Labrador Retriever",
@@ -39,6 +39,15 @@ const BREEDS = [
 export default function Onboarding() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
+
+  const { data: editDog } = useQuery<Dog>({
+    queryKey: ["dog", editId],
+    queryFn: () => dogsApi.get(editId!),
+    enabled: !!editId,
+  });
+
   const [form, setForm] = useState<CreateDogPayload>({
     name: "",
     breed: "",
@@ -50,13 +59,38 @@ export default function Onboarding() {
     health_notes: "",
   });
 
-  const mutation = useMutation({
-    mutationFn: dogsApi.create,
+  useEffect(() => {
+    if (editDog) {
+      setForm({
+        name: editDog.name,
+        breed: editDog.breed,
+        age_months: editDog.age_months,
+        weight_kg: editDog.weight_kg,
+        sex: editDog.sex,
+        neutered: editDog.neutered,
+        activity_level: editDog.activity_level,
+        health_notes: editDog.health_notes ?? "",
+      });
+    }
+  }, [editDog]);
+
+  const createMutation = useMutation({
+    mutationFn: (data: CreateDogPayload) => dogsApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dogs"] });
       navigate("/dashboard");
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: CreateDogPayload) => dogsApi.update(editId!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dogs"] });
+      navigate("/dashboard");
+    },
+  });
+
+  const mutation = editId ? updateMutation : createMutation;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,10 +108,12 @@ export default function Onboarding() {
         </div>
 
         <h1 className="font-display text-3xl font-bold text-on-surface text-center mb-2">
-          Add your dog
+          {editId ? "Edit your dog" : "Add your dog"}
         </h1>
         <p className="text-on-surface-variant text-center mb-10 font-body">
-          Tell us about your pup so we can personalize everything.
+          {editId
+            ? "Update your pup's details."
+            : "Tell us about your pup so we can personalize everything."}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -208,7 +244,9 @@ export default function Onboarding() {
             disabled={mutation.isPending || !form.name || !form.breed}
             className="w-full bg-gradient-to-br from-primary to-primary-dim text-on-primary rounded-lg py-6 text-base font-display font-semibold"
           >
-            {mutation.isPending ? "Creating..." : "Add Dog & Continue"}
+            {mutation.isPending
+              ? editId ? "Saving..." : "Creating..."
+              : editId ? "Save Changes" : "Add Dog & Continue"}
           </Button>
 
           {mutation.isError && (
