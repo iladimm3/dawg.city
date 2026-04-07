@@ -12,5 +12,6 @@ RUN rm /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
 
-# Only substitute BACKEND_URL and PORT, leave Nginx variables ($host, $uri, etc.) intact
-CMD ["sh", "-c", "envsubst '$BACKEND_URL $PORT' < /etc/nginx/nginx.conf.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"]
+# Extract the container's DNS resolver at runtime (works on Railway, Docker, etc.)
+# Then substitute all template variables, leaving Nginx variables ($host, $uri, etc.) intact
+CMD ["sh", "-c", "export DNS_RESOLVER=$(grep nameserver /etc/resolv.conf | head -1 | awk '{print $2}') && envsubst '$BACKEND_URL $PORT $DNS_RESOLVER' < /etc/nginx/nginx.conf.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"]

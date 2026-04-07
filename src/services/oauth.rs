@@ -34,6 +34,7 @@ impl GoogleOAuth {
         )
         .set_redirect_uri(RedirectUrl::new(
             std::env::var("GOOGLE_REDIRECT_URI")
+                .or_else(|_| std::env::var("GOOGLE_REDIRECT_URL"))
                 .unwrap_or_else(|_| "http://localhost:3000/auth/google/callback".to_string()),
         )?);
 

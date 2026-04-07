@@ -4,9 +4,9 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # Docker/Railway internal DNS resolver — re-resolves on each connection
-    # so nginx picks up new backend IPs after redeployments automatically.
-    resolver 127.0.0.11 valid=10s ipv6=off;
+    # Dynamic DNS resolver — extracted from /etc/resolv.conf at container start.
+    # Re-resolves on each connection so nginx picks up new backend IPs after redeployments.
+    resolver ${DNS_RESOLVER} valid=10s ipv6=off;
 
     # Proxy API calls to the Rust backend (variable forces dynamic DNS lookup)
     location /api/ {
