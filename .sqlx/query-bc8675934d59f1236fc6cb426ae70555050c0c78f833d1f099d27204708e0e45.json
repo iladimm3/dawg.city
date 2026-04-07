@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            created_at::TEXT AS date,\n            daily_calories,\n            goal\n        FROM nutrition_plans\n        WHERE dog_id = $1 AND owner_id = $2\n        ORDER BY created_at DESC\n        LIMIT 12\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "date",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "daily_calories",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "goal",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      false,
+      true
+    ]
+  },
+  "hash": "bc8675934d59f1236fc6cb426ae70555050c0c78f833d1f099d27204708e0e45"
+}

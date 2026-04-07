@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        UPDATE dogs SET name=$1, breed=$2, age_months=$3, weight_kg=$4,\n        sex=$5, neutered=$6, activity_level=$7, health_notes=$8\n        WHERE id=$9 AND owner_id=$10\n        RETURNING *\n        ",
+  "query": "\n        INSERT INTO dogs (id, owner_id, name, breed, age_months, weight_kg, sex, neutered, activity_level, health_notes, photo_url, created_at)\n        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())\n        RETURNING *\n        ",
   "describe": {
     "columns": [
       {
@@ -57,10 +57,17 @@
         "ordinal": 10,
         "name": "created_at",
         "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "photo_url",
+        "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
+        "Uuid",
+        "Uuid",
         "Text",
         "Text",
         "Int4",
@@ -69,8 +76,7 @@
         "Bool",
         "Text",
         "Text",
-        "Uuid",
-        "Uuid"
+        "Text"
       ]
     },
     "nullable": [
@@ -84,8 +90,9 @@
       false,
       false,
       true,
-      false
+      false,
+      true
     ]
   },
-  "hash": "663afdd04eaaccb986d65b1a0cabcd4344ae4806dc59151d455aa5de9933adcf"
+  "hash": "e96f8c99bc35db5fe2d82ac019dee6de69d08f970dcc2d0883d16bb9b50d8df6"
 }

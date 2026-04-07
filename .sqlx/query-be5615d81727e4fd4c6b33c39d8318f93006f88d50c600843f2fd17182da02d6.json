@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO training_logs (id, owner_id, dog_id, session_title, completed, logged_at)\n        VALUES ($1, $2, $3, $4, false, NOW())\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "be5615d81727e4fd4c6b33c39d8318f93006f88d50c600843f2fd17182da02d6"
+}

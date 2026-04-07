@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT ROUND(AVG(rating)::NUMERIC, 1)::FLOAT8 FROM training_logs WHERE owner_id = $1 AND dog_id = $2 AND rating IS NOT NULL",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "round",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "aab20bdc060faeec89d1acc873429de5f103044e48736835b31f519b72af6835"
+}

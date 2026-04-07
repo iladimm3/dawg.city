@@ -42,6 +42,11 @@
         "ordinal": 7,
         "name": "updated_at",
         "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "stripe_customer_id",
+        "type_info": "Text"
       }
     ],
     "parameters": {
@@ -61,7 +66,8 @@
       true,
       false,
       false,
-      false
+      false,
+      true
     ]
   },
   "hash": "e057f91d33dd36a6c8c5910440b516a7543a393531f2b25e1a6db7a9c5239487"

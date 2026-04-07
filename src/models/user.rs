@@ -14,6 +14,7 @@ pub struct User {
     pub name: String,
     pub avatar_url: Option<String>,
     pub subscription_tier: String, // "free" | "pro"
+    pub stripe_customer_id: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

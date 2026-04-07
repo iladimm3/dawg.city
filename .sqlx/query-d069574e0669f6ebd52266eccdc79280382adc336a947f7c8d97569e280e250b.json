@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE users SET subscription_tier = $1, updated_at = NOW() WHERE stripe_customer_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d069574e0669f6ebd52266eccdc79280382adc336a947f7c8d97569e280e250b"
+}

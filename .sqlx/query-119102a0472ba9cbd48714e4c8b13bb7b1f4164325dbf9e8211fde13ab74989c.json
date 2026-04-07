@@ -1,0 +1,103 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, dog_id, daily_calories, meals_per_day, portion_per_meal_grams,\n               feeding_schedule, recommended_foods, foods_to_avoid,\n               supplements, notes, next_review_weeks, goal, food_brand, created_at\n        FROM nutrition_plans\n        WHERE dog_id = $1 AND owner_id = $2\n        ORDER BY created_at DESC\n        LIMIT $3 OFFSET $4\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "dog_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "daily_calories",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "meals_per_day",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "portion_per_meal_grams",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "feeding_schedule",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 6,
+        "name": "recommended_foods",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 7,
+        "name": "foods_to_avoid",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 8,
+        "name": "supplements",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 9,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "next_review_weeks",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 11,
+        "name": "goal",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "food_brand",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "119102a0472ba9cbd48714e4c8b13bb7b1f4164325dbf9e8211fde13ab74989c"
+}
