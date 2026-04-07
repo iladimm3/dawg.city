@@ -16,6 +16,7 @@ export interface Dog {
   neutered: boolean;
   activity_level: "low" | "medium" | "high";
   health_notes: string | null;
+  photo_url: string | null;
   created_at: string;
 }
 
@@ -28,6 +29,7 @@ export interface CreateDogPayload {
   neutered: boolean;
   activity_level: string;
   health_notes?: string;
+  photo_url?: string;
 }
 
 export interface Exercise {
@@ -38,6 +40,7 @@ export interface Exercise {
 }
 
 export interface TrainingSession {
+  log_id: string; // auto-saved log ID from backend
   title: string;
   duration_minutes: number;
   exercises: Exercise[];
@@ -69,6 +72,24 @@ export interface SessionLog {
   completed: boolean;
   notes?: string;
   rating?: number;
+  log_id?: string; // If provided, update existing auto-saved log
+}
+
+export interface NutritionPlanRecord {
+  id: string;
+  dog_id: string;
+  daily_calories: number;
+  meals_per_day: number;
+  portion_per_meal_grams: number;
+  feeding_schedule: string[];
+  recommended_foods: string[];
+  foods_to_avoid: string[];
+  supplements: string[];
+  notes: string;
+  next_review_weeks: number;
+  goal: string | null;
+  food_brand: string | null;
+  created_at: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -96,4 +117,36 @@ export interface NutritionPlan {
   supplements: string[];
   notes: string;
   next_review_weeks: number;
+}
+
+// ─── Billing ────────────────────────────────────────────────────────────────
+
+export interface SubscriptionStatus {
+  tier: string;
+  has_active_subscription: boolean;
+}
+
+// ─── Analytics ───────────────────────────────────────────────────────────────
+
+export interface TrainingWeeklyStat {
+  week: string;
+  sessions: number;
+  completed: number;
+  avg_rating: number | null;
+}
+
+export interface TrainingStats {
+  weekly: TrainingWeeklyStat[];
+  total_completed: number;
+  overall_avg_rating: number | null;
+}
+
+export interface NutritionCaloriePoint {
+  date: string;
+  daily_calories: number;
+  goal: string | null;
+}
+
+export interface NutritionStats {
+  calorie_history: NutritionCaloriePoint[];
 }

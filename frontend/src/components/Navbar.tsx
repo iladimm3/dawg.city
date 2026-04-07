@@ -1,16 +1,28 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { authApi } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+import { authApi, billingApi } from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PawPrint, LogOut, Menu, X } from "lucide-react";
+import { PawPrint, LogOut, Menu, X, Zap } from "lucide-react";
 import { FloatingPawIcon } from "./FloatingPawIcon";
+import type { SubscriptionStatus } from "@/types";
 
 export function Navbar() {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const { data: billingStatus } = useQuery<SubscriptionStatus>({
+    queryKey: ["billing-status"],
+    queryFn: billingApi.status,
+    enabled: isAuthenticated,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const isPro = billingStatus?.tier === "pro";
 
   const handleLogout = async () => {
     await authApi.logout();
@@ -44,6 +56,12 @@ export function Navbar() {
           <span className="font-display text-xl font-bold text-on-surface">
             Dawg City
           </span>
+          {isPro && (
+            <Badge className="bg-gradient-to-r from-primary to-secondary text-on-primary border-0 rounded-lg text-xs px-2 py-0.5 flex items-center gap-1">
+              <Zap size={10} />
+              Pro
+            </Badge>
+          )}
         </Link>
 
         {/* Center links (desktop) */}
@@ -65,12 +83,25 @@ export function Navbar() {
         <div className="flex items-center gap-3">
           {isAuthenticated && user ? (
             <>
-              <Avatar className="h-9 w-9">
-                <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
-                <AvatarFallback className="bg-surface-container-high text-on-surface text-xs">
-                  {user.name.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              {!isPro && (
+                <Link to="/billing" className="hidden md:block">
+                  <Button
+                    size="sm"
+                    className="bg-gradient-to-br from-primary to-primary-dim text-on-primary rounded-lg font-body text-xs gap-1 px-3"
+                  >
+                    <Zap size={12} />
+                    Upgrade
+                  </Button>
+                </Link>
+              )}
+              <Link to="/billing">
+                <Avatar className="h-9 w-9 cursor-pointer">
+                  <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
+                  <AvatarFallback className="bg-surface-container-high text-on-surface text-xs">
+                    {user.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
               <Button
                 variant="ghost"
                 size="sm"
@@ -115,6 +146,13 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
+          <Link
+            to="/billing"
+            onClick={() => setMobileOpen(false)}
+            className="block py-3 text-on-surface-variant hover:text-on-surface transition-colors font-body text-sm"
+          >
+            {isPro ? "Billing" : "⚡ Upgrade to Pro"}
+          </Link>
           <button
             onClick={() => { setMobileOpen(false); handleLogout(); }}
             className="flex items-center gap-2 py-3 text-on-surface-variant hover:text-on-surface transition-colors font-body text-sm w-full"

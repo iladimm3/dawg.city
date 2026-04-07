@@ -10,6 +10,7 @@ const Onboarding = lazy(() => import("@/pages/Onboarding"));
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Training = lazy(() => import("@/pages/Training"));
 const Nutrition = lazy(() => import("@/pages/Nutrition"));
+const Billing = lazy(() => import("@/pages/Billing"));
 
 function LoadingScreen() {
   return (
@@ -70,6 +71,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Nutrition />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/billing"
+                  element={
+                    <ProtectedRoute>
+                      <Billing />
                     </ProtectedRoute>
                   }
                 />

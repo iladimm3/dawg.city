@@ -1,7 +1,7 @@
 use axum::{
-    extract::{Extension, State},
+    extract::{Extension, Query, State},
     middleware,
-    routing::post,
+    routing::{get, post},
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
@@ -12,7 +12,34 @@ use crate::{errors::AppError, middleware::auth::require_auth, models::user::User
 pub fn router(state: AppState) -> Router<AppState> {
     Router::new()
         .route("/plan", post(generate_nutrition_plan))
+        .route("/history", get(get_nutrition_history))
+        .route("/stats", get(get_nutrition_stats))
         .route_layer(middleware::from_fn_with_state(state, require_auth))
+}
+
+#[derive(Deserialize)]
+pub struct HistoryParams {
+    pub dog_id: Uuid,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
+#[derive(Serialize, sqlx::FromRow)]
+pub struct NutritionPlanRow {
+    pub id: Uuid,
+    pub dog_id: Uuid,
+    pub daily_calories: i32,
+    pub meals_per_day: i32,
+    pub portion_per_meal_grams: f64,
+    pub feeding_schedule: Vec<String>,
+    pub recommended_foods: Vec<String>,
+    pub foods_to_avoid: Vec<String>,
+    pub supplements: Vec<String>,
+    pub notes: String,
+    pub next_review_weeks: i32,
+    pub goal: Option<String>,
+    pub food_brand: Option<String>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Deserialize)]
@@ -108,33 +135,159 @@ Respond ONLY with valid JSON in this exact format:
         goal, food_brand, restrictions, issues
     );
 
-    let api_key = std::env::var("ANTHROPIC_API_KEY")
-        .map_err(|_| AppError::InternalError("ANTHROPIC_API_KEY is not configured".into()))?;
-    let model = std::env::var("ANTHROPIC_MODEL")
-        .unwrap_or_else(|_| "claude-sonnet-4-20250514".to_string());
-
-    let response = reqwest::Client::new()
-        .post("https://api.anthropic.com/v1/messages")
-        .header("x-api-key", &api_key)
-        .header("anthropic-version", "2023-06-01")
-        .header("content-type", "application/json")
-        .json(&serde_json::json!({
-            "model": model,
-            "max_tokens": 1024,
-            "messages": [{"role": "user", "content": prompt}]
-        }))
-        .send()
-        .await;
-
-    let body: serde_json::Value = response
-        .map_err(|e| AppError::InternalError(format!("AI request failed: {}", e)))?
-        .json()
+    // Tier gating: free users limited to 3 AI generations per day across training + nutrition
+    if user.subscription_tier == "free" {
+        let training_count: i64 = sqlx::query_scalar!(
+            r#"SELECT COUNT(*) FROM training_logs WHERE owner_id = $1 AND logged_at >= NOW() - INTERVAL '1 day'"#,
+            user.id
+        )
+        .fetch_one(&state.db)
         .await
-        .unwrap_or_default();
-    let content = body["content"][0]["text"].as_str().unwrap_or("{}");
+        .map_err(|e| AppError::InternalError(e.to_string()))?
+        .unwrap_or(0);
 
-    let plan = serde_json::from_str::<NutritionPlan>(content)
-        .map_err(|_| AppError::InternalError("AI response parsing failed".into()))?;
+        let nutrition_count: i64 = sqlx::query_scalar!(
+            r#"SELECT COUNT(*) FROM nutrition_plans WHERE owner_id = $1 AND created_at >= NOW() - INTERVAL '1 day'"#,
+            user.id
+        )
+        .fetch_one(&state.db)
+        .await
+        .map_err(|e| AppError::InternalError(e.to_string()))?
+        .unwrap_or(0);
+
+        if training_count + nutrition_count >= 3 {
+            return Err(AppError::InvalidInput(
+                "Free plan limit reached (3 AI sessions/day). Upgrade to Pro for unlimited access.".into()
+            ));
+        }
+    }
+
+    let content = crate::services::anthropic::call(&state.anthropic_api_key, &state.anthropic_model, &prompt, 1024).await?;
+
+    let plan = serde_json::from_str::<NutritionPlan>(&content)
+        .map_err(|e| AppError::InternalError(format!("AI returned invalid JSON for nutrition plan: {}", e)))?;
+
+    // Auto-save the plan to the database
+    sqlx::query!(
+        r#"
+        INSERT INTO nutrition_plans (
+            id, owner_id, dog_id,
+            daily_calories, meals_per_day, portion_per_meal_grams,
+            feeding_schedule, recommended_foods, foods_to_avoid,
+            supplements, notes, next_review_weeks, goal, food_brand,
+            created_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+        "#,
+        Uuid::new_v4(),
+        user.id,
+        req.dog_id,
+        plan.daily_calories,
+        plan.meals_per_day,
+        plan.portion_per_meal_grams,
+        &plan.feeding_schedule,
+        &plan.recommended_foods,
+        &plan.foods_to_avoid,
+        &plan.supplements,
+        plan.notes,
+        plan.next_review_weeks,
+        goal,
+        food_brand,
+    )
+    .execute(&state.db)
+    .await
+    .map_err(|e| AppError::InternalError(e.to_string()))?;
 
     Ok(Json(serde_json::json!(plan)))
+}
+
+async fn get_nutrition_history(
+    State(state): State<AppState>,
+    Extension(user): Extension<User>,
+    Query(params): Query<HistoryParams>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let limit = params.limit.unwrap_or(10).min(100);
+    let offset = params.offset.unwrap_or(0);
+
+    // Verify dog belongs to user
+    let dog_exists = sqlx::query!(
+        "SELECT id FROM dogs WHERE id = $1 AND owner_id = $2",
+        params.dog_id, user.id
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|e| AppError::InternalError(e.to_string()))?;
+
+    if dog_exists.is_none() {
+        return Err(AppError::NotFound("Dog not found".into()));
+    }
+
+    let rows = sqlx::query_as!(
+        NutritionPlanRow,
+        r#"
+        SELECT id, dog_id, daily_calories, meals_per_day, portion_per_meal_grams,
+               feeding_schedule, recommended_foods, foods_to_avoid,
+               supplements, notes, next_review_weeks, goal, food_brand, created_at
+        FROM nutrition_plans
+        WHERE dog_id = $1 AND owner_id = $2
+        ORDER BY created_at DESC
+        LIMIT $3 OFFSET $4
+        "#,
+        params.dog_id, user.id, limit, offset
+    )
+    .fetch_all(&state.db)
+    .await
+    .map_err(|e| AppError::InternalError(e.to_string()))?;
+
+    let total: i64 = sqlx::query_scalar!(
+        "SELECT COUNT(*) FROM nutrition_plans WHERE dog_id = $1 AND owner_id = $2",
+        params.dog_id, user.id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|e| AppError::InternalError(e.to_string()))?
+    .unwrap_or(0);
+
+    Ok(Json(serde_json::json!({
+        "data": rows,
+        "total": total,
+        "limit": limit,
+        "offset": offset
+    })))
+}
+
+async fn get_nutrition_stats(
+    State(state): State<AppState>,
+    Extension(user): Extension<User>,
+    Query(params): Query<HistoryParams>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    // Calorie history over the last 12 plans
+    let rows = sqlx::query!(
+        r#"
+        SELECT
+            created_at::TEXT AS date,
+            daily_calories,
+            goal
+        FROM nutrition_plans
+        WHERE dog_id = $1 AND owner_id = $2
+        ORDER BY created_at DESC
+        LIMIT 12
+        "#,
+        params.dog_id,
+        user.id
+    )
+    .fetch_all(&state.db)
+    .await
+    .map_err(|e| AppError::InternalError(e.to_string()))?;
+
+    let history: Vec<serde_json::Value> = rows
+        .into_iter()
+        .map(|r| serde_json::json!({
+            "date":           r.date,
+            "daily_calories": r.daily_calories,
+            "goal":           r.goal,
+        }))
+        .collect();
+
+    Ok(Json(serde_json::json!({ "calorie_history": history })))
 }

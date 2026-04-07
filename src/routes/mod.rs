@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod billing;
 pub mod dogs;
-pub mod training;
 pub mod nutrition;
+pub mod training;

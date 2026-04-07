@@ -25,10 +25,11 @@ pub struct Dog {
     pub breed: String,
     pub age_months: i32,
     pub weight_kg: f64,
-    pub sex: String,           // "male" | "female"
+    pub sex: String,
     pub neutered: bool,
-    pub activity_level: String, // "low" | "medium" | "high"
+    pub activity_level: String,
     pub health_notes: Option<String>,
+    pub photo_url: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -42,6 +43,7 @@ pub struct CreateDogPayload {
     pub neutered: bool,
     pub activity_level: String,
     pub health_notes: Option<String>,
+    pub photo_url: Option<String>,
 }
 
 async fn list_dogs(
@@ -68,13 +70,14 @@ async fn create_dog(
     let dog = sqlx::query_as!(
         Dog,
         r#"
-        INSERT INTO dogs (id, owner_id, name, breed, age_months, weight_kg, sex, neutered, activity_level, health_notes, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+        INSERT INTO dogs (id, owner_id, name, breed, age_months, weight_kg, sex, neutered, activity_level, health_notes, photo_url, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
         RETURNING *
         "#,
         Uuid::new_v4(), user.id, payload.name, payload.breed,
         payload.age_months, payload.weight_kg, payload.sex,
         payload.neutered, payload.activity_level, payload.health_notes,
+        payload.photo_url,
     )
     .fetch_one(&state.db)
     .await
@@ -111,13 +114,13 @@ async fn update_dog(
         Dog,
         r#"
         UPDATE dogs SET name=$1, breed=$2, age_months=$3, weight_kg=$4,
-        sex=$5, neutered=$6, activity_level=$7, health_notes=$8
-        WHERE id=$9 AND owner_id=$10
+        sex=$5, neutered=$6, activity_level=$7, health_notes=$8, photo_url=$9
+        WHERE id=$10 AND owner_id=$11
         RETURNING *
         "#,
         payload.name, payload.breed, payload.age_months, payload.weight_kg,
         payload.sex, payload.neutered, payload.activity_level, payload.health_notes,
-        id, user.id
+        payload.photo_url, id, user.id
     )
     .fetch_optional(&state.db)
     .await

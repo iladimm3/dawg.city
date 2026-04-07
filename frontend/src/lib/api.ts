@@ -42,11 +42,29 @@ export const trainingApi = {
     api
       .get("/api/training/history", { params: { dog_id: dogId, limit, offset } })
       .then((r) => r.data),
+  stats: (dogId: string) =>
+    api
+      .get("/api/training/stats", { params: { dog_id: dogId } })
+      .then((r) => r.data),
 };
 
 export const nutritionApi = {
   generatePlan: (data: import("@/types").NutritionRequest) =>
     api.post("/api/nutrition/plan", data).then((r) => r.data),
+  history: (dogId: string, limit = 10, offset = 0) =>
+    api
+      .get("/api/nutrition/history", { params: { dog_id: dogId, limit, offset } })
+      .then((r) => r.data),
+  stats: (dogId: string) =>
+    api
+      .get("/api/nutrition/stats", { params: { dog_id: dogId } })
+      .then((r) => r.data),
+};
+
+export const billingApi = {
+  status: () => api.get("/api/billing/status").then((r) => r.data),
+  createCheckout: () => api.post("/api/billing/checkout").then((r) => r.data),
+  createPortal: () => api.post("/api/billing/portal").then((r) => r.data),
 };
 
 export default api;

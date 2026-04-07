@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { trainingApi } from "@/lib/api";
 import { useDogs } from "@/hooks/useDogs";
@@ -17,7 +17,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { GlassDialog } from "@/components/GlassDialog";
 import { FloatingPawIcon } from "@/components/FloatingPawIcon";
-import { Dumbbell, Star, Bone, CheckCircle } from "lucide-react";
+import { Dumbbell, Star, Bone, CheckCircle, FileDown } from "lucide-react";
+import { toast } from "sonner";
 import type { TrainingSession, TrainingRequest } from "@/types";
 
 const FOCUS_AREAS = [
@@ -45,10 +46,15 @@ export default function Training() {
   const [logOpen, setLogOpen] = useState(false);
   const [logRating, setLogRating] = useState(3);
   const [logNotes, setLogNotes] = useState("");
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const generateMutation = useMutation({
     mutationFn: (data: TrainingRequest) => trainingApi.generateSession(data),
     onSuccess: (data: TrainingSession) => setSession(data),
+    onError: (err: Error & { response?: { data?: { message?: string } } }) => {
+      const msg = err?.response?.data?.message ?? "Failed to generate session.";
+      toast.error(msg);
+    },
   });
 
   const logMutation = useMutation({
@@ -59,13 +65,36 @@ export default function Training() {
         completed: true,
         notes: logNotes || undefined,
         rating: logRating,
+        log_id: session!.log_id,
       }),
     onSuccess: () => {
       setLogOpen(false);
       setLogNotes("");
       setLogRating(3);
+      toast.success("Session logged!");
+    },
+    onError: () => {
+      toast.error("Failed to save log. Please try again.");
     },
   });
+
+  const handleExportPDF = async () => {
+    if (!pdfRef.current) return;
+    try {
+      const { default: jsPDF } = await import("jspdf");
+      const { default: html2canvas } = await import("html2canvas");
+      const canvas = await html2canvas(pdfRef.current, { scale: 2, backgroundColor: "#1a0a2e" });
+      const img = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(img, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`training-${session?.title?.replace(/\s+/g, "-").toLowerCase() ?? "session"}.pdf`);
+      toast.success("PDF exported!");
+    } catch {
+      toast.error("Failed to export PDF.");
+    }
+  };
 
   const toggleFocus = (area: string) => {
     setFocusAreas((prev) =>
@@ -198,6 +227,7 @@ export default function Training() {
       {/* Results */}
       {session && (
         <section className="space-y-6">
+          <div ref={pdfRef} className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-2xl font-bold text-on-surface">
               {session.title}
@@ -267,6 +297,17 @@ export default function Training() {
             className="bg-secondary text-on-secondary rounded-xl px-8 py-5 font-display font-semibold"
           >
             Log this session
+          </Button>
+          </div>{/* end pdfRef */}
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleExportPDF}
+            className="gap-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-lg"
+          >
+            <FileDown size={16} />
+            Export PDF
           </Button>
         </section>
       )}

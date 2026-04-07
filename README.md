@@ -100,3 +100,7 @@ Set env vars in Railway dashboard matching `.env.example`.
 3. Create OAuth 2.0 Client ID (Web application)
 4. Add redirect URI: `https://your-railway-domain/auth/google/callback`
 5. Copy Client ID + Secret to Railway env vars
+
+## Development Roadmap
+
+See [ROADMAP.md](ROADMAP.md) for the full development roadmap (phases 1-5, completed items, testing tasks, and technical debt).

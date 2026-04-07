@@ -17,13 +17,15 @@ mod errors;
 mod routes;
 mod services;
 
-use routes::{auth, dogs, training, nutrition};
+use routes::{auth, billing, dogs, training, nutrition};
 
 #[derive(Clone)]
 pub struct AppState {
     pub db: sqlx::PgPool,
     pub oauth: Arc<services::oauth::GoogleOAuth>,
     pub cookie_key: axum_extra::extract::cookie::Key,
+    pub anthropic_api_key: String,
+    pub anthropic_model: String,
 }
 
 impl axum::extract::FromRef<AppState> for axum_extra::extract::cookie::Key {
@@ -63,7 +65,12 @@ async fn main() -> Result<()> {
     let cookie_secret = std::env::var("COOKIE_SECRET").expect("COOKIE_SECRET must be set");
     let cookie_key = axum_extra::extract::cookie::Key::from(cookie_secret.as_bytes());
 
-    let state = AppState { db, oauth, cookie_key };
+    let anthropic_api_key = std::env::var("ANTHROPIC_API_KEY")
+        .expect("ANTHROPIC_API_KEY must be set");
+    let anthropic_model = std::env::var("ANTHROPIC_MODEL")
+        .unwrap_or_else(|_| "claude-sonnet-4-20250514".to_string());
+
+    let state = AppState { db, oauth, cookie_key, anthropic_api_key, anthropic_model };
 
     // Router
     let app = Router::new()
@@ -74,6 +81,8 @@ async fn main() -> Result<()> {
         .nest("/api/dogs", dogs::router(state.clone()))
         .nest("/api/training", training::router(state.clone()))
         .nest("/api/nutrition", nutrition::router(state.clone()))
+        .nest("/api/billing", billing::router(state.clone()))
+        .merge(billing::webhook_router())
         .layer(TraceLayer::new_for_http())
         .layer({
             let cors_origins = std::env::var("CORS_ORIGINS").unwrap_or_default();

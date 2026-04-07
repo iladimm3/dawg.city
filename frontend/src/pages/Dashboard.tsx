@@ -8,9 +8,18 @@ import { DogHeroCard } from "@/components/DogHeroCard";
 import { DogSelector } from "@/components/DogSelector";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, Apple, Bone, Plus, Pencil, Trash2 } from "lucide-react";
+import { Dumbbell, Apple, Bone, Plus, Pencil, Trash2, TrendingUp } from "lucide-react";
 import { FloatingPawIcon } from "@/components/FloatingPawIcon";
-import type { TrainingLogEntry } from "@/types";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
+import type { TrainingLogEntry, TrainingStats } from "@/types";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -22,6 +31,12 @@ export default function Dashboard() {
   const { data: historyData } = useQuery({
     queryKey: ["training-history", currentDog?.id],
     queryFn: () => trainingApi.history(currentDog!.id, 5, 0),
+    enabled: !!currentDog,
+  });
+
+  const { data: trainingStats } = useQuery<TrainingStats>({
+    queryKey: ["training-stats", currentDog?.id],
+    queryFn: () => trainingApi.stats(currentDog!.id),
     enabled: !!currentDog,
   });
 
@@ -195,6 +210,80 @@ export default function Dashboard() {
                 </p>
               </div>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* Training Progress Chart */}
+      {trainingStats && trainingStats.weekly.length > 0 && (
+        <section className="mt-14">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-display text-xl font-bold text-on-surface flex items-center gap-2">
+              <TrendingUp size={20} className="text-primary" />
+              Training Progress
+            </h2>
+            <div className="flex gap-6 text-sm text-on-surface-variant">
+              <span>
+                <span className="font-display font-bold text-on-surface">
+                  {trainingStats.total_completed}
+                </span>{" "}
+                sessions completed
+              </span>
+              {trainingStats.overall_avg_rating && (
+                <span>
+                  <span className="font-display font-bold text-on-surface">
+                    {trainingStats.overall_avg_rating.toFixed(1)}
+                  </span>{" "}
+                  avg rating
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="bg-surface-container-low rounded-xl p-6">
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart
+                data={trainingStats.weekly}
+                margin={{ top: 4, right: 4, left: -20, bottom: 4 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="rgba(255,255,255,0.06)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="week"
+                  tick={{ fill: "var(--color-on-surface-variant, #9ca3af)", fontSize: 11 }}
+                  tickFormatter={(v: string) => {
+                    const d = new Date(v);
+                    return `${d.getMonth() + 1}/${d.getDate()}`;
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  tick={{ fill: "var(--color-on-surface-variant, #9ca3af)", fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--color-surface-container-highest, #2a1a3e)",
+                    border: "none",
+                    borderRadius: "8px",
+                    color: "var(--color-on-surface, #f3e8ff)",
+                    fontSize: 12,
+                  }}
+                  cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                  formatter={(value, name) => [
+                    value,
+                    name === "sessions" ? "Total" : "Completed",
+                  ]}
+                />
+                <Bar dataKey="sessions" fill="var(--color-primary-dim, #7c3aed)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="completed" fill="var(--color-secondary, #10b981)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </section>
       )}

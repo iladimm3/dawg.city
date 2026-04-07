@@ -14,6 +14,7 @@ pub fn router(state: AppState) -> Router<AppState> {
         .route("/session", post(generate_training_session))
         .route("/log", post(log_session_result))
         .route("/history", get(get_training_history))
+        .route("/stats", get(get_training_stats))
         .route_layer(middleware::from_fn_with_state(state, require_auth))
 }
 
@@ -68,6 +69,7 @@ pub struct SessionLog {
     pub completed: bool,
     pub notes: Option<String>,
     pub rating: Option<i32>, // 1-5
+    pub log_id: Option<Uuid>, // If provided, update existing auto-saved log
 }
 
 async fn generate_training_session(
@@ -156,36 +158,60 @@ Respond ONLY with valid JSON in this exact format:
         dog.breed, age_description, difficulty
     );
 
-    // Call Anthropic API
-    let api_key = std::env::var("ANTHROPIC_API_KEY")
-        .map_err(|_| AppError::InternalError("ANTHROPIC_API_KEY is not configured".into()))?;
-    let model = std::env::var("ANTHROPIC_MODEL")
-        .unwrap_or_else(|_| "claude-sonnet-4-20250514".to_string());
-
-    let response = reqwest::Client::new()
-        .post("https://api.anthropic.com/v1/messages")
-        .header("x-api-key", &api_key)
-        .header("anthropic-version", "2023-06-01")
-        .header("content-type", "application/json")
-        .json(&serde_json::json!({
-            "model": model,
-            "max_tokens": 1024,
-            "messages": [{"role": "user", "content": prompt}]
-        }))
-        .send()
-        .await;
-
-    let body: serde_json::Value = response
-        .map_err(|e| AppError::InternalError(format!("AI request failed: {}", e)))?
-        .json()
+    // Tier gating: free users limited to 3 AI generations per day across training + nutrition
+    if user.subscription_tier == "free" {
+        let today_count: i64 = sqlx::query_scalar!(
+            r#"SELECT COUNT(*) FROM training_logs WHERE owner_id = $1 AND logged_at >= NOW() - INTERVAL '1 day'"#,
+            user.id
+        )
+        .fetch_one(&state.db)
         .await
-        .unwrap_or_default();
-    let content = body["content"][0]["text"].as_str().unwrap_or("{}");
+        .map_err(|e| AppError::InternalError(e.to_string()))?
+        .unwrap_or(0);
 
-    let session = serde_json::from_str::<TrainingSession>(content)
-        .map_err(|_| AppError::InternalError("AI response parsing failed".into()))?;
+        let nutrition_count: i64 = sqlx::query_scalar!(
+            r#"SELECT COUNT(*) FROM nutrition_plans WHERE owner_id = $1 AND created_at >= NOW() - INTERVAL '1 day'"#,
+            user.id
+        )
+        .fetch_one(&state.db)
+        .await
+        .map_err(|e| AppError::InternalError(e.to_string()))?
+        .unwrap_or(0);
 
-    Ok(Json(serde_json::json!(session)))
+        if today_count + nutrition_count >= 3 {
+            return Err(AppError::InvalidInput(
+                "Free plan limit reached (3 AI sessions/day). Upgrade to Pro for unlimited access.".into()
+            ));
+        }
+    }
+
+    // Call Anthropic API
+    let content = crate::services::anthropic::call(&state.anthropic_api_key, &state.anthropic_model, &prompt, 1024).await?;
+
+    let session = serde_json::from_str::<TrainingSession>(&content)
+        .map_err(|e| AppError::InternalError(format!("AI returned invalid JSON for training session: {}", e)))?;
+
+    // Auto-save the generated session as a pending training log
+    let log_id = Uuid::new_v4();
+    sqlx::query!(
+        r#"
+        INSERT INTO training_logs (id, owner_id, dog_id, session_title, completed, logged_at)
+        VALUES ($1, $2, $3, $4, false, NOW())
+        "#,
+        log_id, user.id, req.dog_id, session.title
+    )
+    .execute(&state.db)
+    .await
+    .map_err(|e| AppError::InternalError(e.to_string()))?;
+
+    Ok(Json(serde_json::json!({
+        "log_id": log_id,
+        "title": session.title,
+        "duration_minutes": session.duration_minutes,
+        "exercises": session.exercises,
+        "tips": session.tips,
+        "encouragement": session.encouragement,
+    })))
 }
 
 async fn log_session_result(
@@ -193,17 +219,33 @@ async fn log_session_result(
     Extension(user): Extension<User>,
     Json(log): Json<SessionLog>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    sqlx::query!(
-        r#"
-        INSERT INTO training_logs (id, owner_id, dog_id, session_title, completed, notes, rating, logged_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-        "#,
-        Uuid::new_v4(), user.id, log.dog_id,
-        log.session_title, log.completed, log.notes, log.rating
-    )
-    .execute(&state.db)
-    .await
-    .map_err(|e| AppError::InternalError(e.to_string()))?;
+    if let Some(id) = log.log_id {
+        // Update the existing auto-saved log
+        sqlx::query!(
+            r#"
+            UPDATE training_logs
+            SET completed = $1, notes = $2, rating = $3, logged_at = NOW()
+            WHERE id = $4 AND owner_id = $5
+            "#,
+            log.completed, log.notes, log.rating, id, user.id
+        )
+        .execute(&state.db)
+        .await
+        .map_err(|e| AppError::InternalError(e.to_string()))?;
+    } else {
+        // Create a new log entry (fallback / manual log)
+        sqlx::query!(
+            r#"
+            INSERT INTO training_logs (id, owner_id, dog_id, session_title, completed, notes, rating, logged_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+            "#,
+            Uuid::new_v4(), user.id, log.dog_id,
+            log.session_title, log.completed, log.notes, log.rating
+        )
+        .execute(&state.db)
+        .await
+        .map_err(|e| AppError::InternalError(e.to_string()))?;
+    }
 
     Ok(Json(serde_json::json!({"success": true})))
 }
@@ -245,5 +287,67 @@ async fn get_training_history(
         "total": total,
         "limit": limit,
         "offset": offset
+    })))
+}
+
+async fn get_training_stats(
+    State(state): State<AppState>,
+    Extension(user): Extension<User>,
+    Query(params): Query<HistoryParams>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    // Weekly session counts + avg rating for the last 8 weeks
+    let weekly = sqlx::query!(
+        r#"
+        SELECT
+            DATE_TRUNC('week', logged_at)::TEXT AS week,
+            COUNT(*)::INT AS sessions,
+            COUNT(*) FILTER (WHERE completed = true)::INT AS completed,
+            ROUND(AVG(rating)::NUMERIC, 1)::FLOAT8 AS avg_rating
+        FROM training_logs
+        WHERE owner_id = $1
+          AND dog_id   = $2
+          AND logged_at >= NOW() - INTERVAL '8 weeks'
+        GROUP BY 1
+        ORDER BY 1
+        "#,
+        user.id,
+        params.dog_id
+    )
+    .fetch_all(&state.db)
+    .await
+    .map_err(|e| AppError::InternalError(e.to_string()))?;
+
+    let stats: Vec<serde_json::Value> = weekly
+        .into_iter()
+        .map(|row| serde_json::json!({
+            "week":       row.week,
+            "sessions":   row.sessions,
+            "completed":  row.completed,
+            "avg_rating": row.avg_rating,
+        }))
+        .collect();
+
+    // All-time totals
+    let total_completed: i64 = sqlx::query_scalar!(
+        "SELECT COUNT(*) FROM training_logs WHERE owner_id = $1 AND dog_id = $2 AND completed = true",
+        user.id, params.dog_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|e| AppError::InternalError(e.to_string()))?
+    .unwrap_or(0);
+
+    let overall_avg: Option<f64> = sqlx::query_scalar!(
+        "SELECT ROUND(AVG(rating)::NUMERIC, 1)::FLOAT8 FROM training_logs WHERE owner_id = $1 AND dog_id = $2 AND rating IS NOT NULL",
+        user.id, params.dog_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|e| AppError::InternalError(e.to_string()))?;
+
+    Ok(Json(serde_json::json!({
+        "weekly":           stats,
+        "total_completed":  total_completed,
+        "overall_avg_rating": overall_avg,
     })))
 }

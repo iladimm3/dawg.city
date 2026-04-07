@@ -15,11 +15,19 @@ export function DogHeroCard({ dog }: DogHeroCardProps) {
 
   return (
     <div className="relative">
-      {/* Photo breaking container bounds */}
+      {/* Dog photo / paw placeholder — breaks out of the card */}
       <div className="absolute -top-8 right-8 z-10">
-        <div className="w-28 h-28 rounded-xl bg-gradient-to-br from-primary to-primary-dim flex items-center justify-center shadow-2xl shadow-primary/20">
-          <PawPrint className="text-on-primary" size={48} />
-        </div>
+        {dog.photo_url ? (
+          <img
+            src={dog.photo_url}
+            alt={dog.name}
+            className="w-28 h-28 rounded-xl object-cover shadow-2xl shadow-primary/20"
+          />
+        ) : (
+          <div className="w-28 h-28 rounded-xl bg-gradient-to-br from-primary to-primary-dim flex items-center justify-center shadow-2xl shadow-primary/20">
+            <PawPrint className="text-on-primary" size={48} />
+          </div>
+        )}
       </div>
 
       <div className="bg-surface-container-low rounded-xl p-8 pt-10 relative overflow-visible">
