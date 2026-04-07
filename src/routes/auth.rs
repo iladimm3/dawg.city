@@ -10,6 +10,26 @@ use uuid::Uuid;
 
 use crate::{errors::AppError, models::user::User, AppState};
 
+/// Read optional COOKIE_DOMAIN env var (e.g. "dawg.city") so cookies work on
+/// both "www.dawg.city" and "dawg.city".
+fn build_cookie(name: &str, value: String) -> Cookie<'static> {
+    let mut builder = Cookie::build((name.to_owned(), value))
+        .http_only(true)
+        .same_site(axum_extra::extract::cookie::SameSite::Lax)
+        .path("/".to_owned());
+
+    if let Ok(domain) = std::env::var("COOKIE_DOMAIN") {
+        builder = builder.domain(domain);
+    }
+
+    // Set Secure flag when served over HTTPS
+    if std::env::var("COOKIE_SECURE").map_or(true, |v| v != "false") {
+        builder = builder.secure(true);
+    }
+
+    builder.build()
+}
+
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/google", get(google_login))
@@ -26,10 +46,8 @@ async fn google_login(
     let (auth_url, csrf_token) = state.oauth.auth_url();
 
     // Store CSRF token in a short-lived cookie to verify on callback
-    let csrf_cookie = Cookie::build(("oauth_csrf", csrf_token.secret().clone()))
-        .http_only(true)
-        .max_age(time::Duration::minutes(10))
-        .build();
+    let mut csrf_cookie = build_cookie("oauth_csrf", csrf_token.secret().clone());
+    csrf_cookie.set_max_age(Some(time::Duration::minutes(10)));
 
     (jar.add(csrf_cookie), Redirect::to(&auth_url))
 }
@@ -73,12 +91,8 @@ async fn google_callback(
     let user = user.unwrap();
 
     // Create session cookie with user ID
-    let session_cookie = Cookie::build(("session_user_id", user.id.to_string()))
-        .http_only(true)
-        .same_site(axum_extra::extract::cookie::SameSite::Lax)
-        .max_age(time::Duration::days(30))
-        .path("/")
-        .build();
+    let mut session_cookie = build_cookie("session_user_id", user.id.to_string());
+    session_cookie.set_max_age(Some(time::Duration::days(30)));
 
     let jar = jar.remove(Cookie::from("oauth_csrf")).add(session_cookie);
     (jar, Redirect::to("/dashboard"))
