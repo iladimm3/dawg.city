@@ -86,8 +86,20 @@ async fn main() -> Result<()> {
                     .collect();
                 CorsLayer::new()
                     .allow_origin(AllowOrigin::list(origins))
-                    .allow_methods(tower_http::cors::Any)
-                    .allow_headers(tower_http::cors::Any)
+                    .allow_methods([
+                        axum::http::Method::GET,
+                        axum::http::Method::POST,
+                        axum::http::Method::PUT,
+                        axum::http::Method::PATCH,
+                        axum::http::Method::DELETE,
+                        axum::http::Method::OPTIONS,
+                    ])
+                    .allow_headers([
+                        axum::http::header::CONTENT_TYPE,
+                        axum::http::header::AUTHORIZATION,
+                        axum::http::header::ACCEPT,
+                        axum::http::header::COOKIE,
+                    ])
                     .allow_credentials(true)
             }
         })
