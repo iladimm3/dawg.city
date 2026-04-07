@@ -1,10 +1,3 @@
-# Redirect www → apex
-server {
-    listen ${PORT};
-    server_name www.dawg.city;
-    return 301 https://dawg.city$request_uri;
-}
-
 server {
     listen ${PORT};
     server_name _;
