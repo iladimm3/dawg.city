@@ -121,14 +121,13 @@ export function Navbar() {
               </Button>
             </>
           ) : (
-            <a href={authApi.loginUrl()}>
-              <Button
+            <Button
                 size="sm"
                 className="bg-gradient-to-br from-primary to-primary-dim text-on-primary rounded-lg font-body"
+                onClick={() => { window.location.href = authApi.loginUrl(); }}
               >
                 Sign in
               </Button>
-            </a>
           )}
         </div>
       </div>

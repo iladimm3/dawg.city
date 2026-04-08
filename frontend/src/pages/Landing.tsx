@@ -62,15 +62,14 @@ export default function Landing() {
             Built around your dog's unique needs.
           </p>
 
-          <a href={authApi.loginUrl()}>
-            <Button
-              size="lg"
-              className="bg-gradient-to-br from-primary to-primary-dim text-on-primary rounded-xl px-10 py-6 text-lg font-display font-semibold shadow-2xl shadow-primary/25 hover:shadow-primary/40 transition-shadow"
-            >
-              <PawPrint className="mr-2" size={20} />
-              Sign in with Google
-            </Button>
-          </a>
+          <Button
+            size="lg"
+            className="bg-gradient-to-br from-primary to-primary-dim text-on-primary rounded-xl px-10 py-6 text-lg font-display font-semibold shadow-2xl shadow-primary/25 hover:shadow-primary/40 transition-shadow"
+            onClick={() => { window.location.href = authApi.loginUrl(); }}
+          >
+            <PawPrint className="mr-2" size={20} />
+            Sign in with Google
+          </Button>
         </div>
       </section>
 
